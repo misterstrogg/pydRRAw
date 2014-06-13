@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>RRD Content {{ info.filename }}</h1>
+<div>
+  <table class="table">
+    <tbody>
+
+          {% for ds in info.ds %}
+          {% for i in info.rra %}
+    	  {% url 'pydrraw:dataview' info.rrdpathname info.rrd ds.name i.cf as dataurl %}
+      	<tr>
+        <td>{{ ds.name }}</td>
+	<td>{{ info.rrdpathname }}</td>
+	<td>{{ info.rrd }}</td>
+        <td><a href="{{ dataurl}}">{{ i.cf }}</a></td>
+    	</tr>
+          {% endfor %}
+          {% endfor %}
+    </tbody>
+  </table>
+  <table id="infotable" border=1>
+    <tr><th colspan="21">Data</th></tr>
+  </table>
+</div>
+{% endblock %}
+
+{% block script %}
+
+<script type="text/javascript">
+  function element_update() {
+    ds = $('#select_ds').val();
+    rra = $('#select_rra').val();
+    col = $('#select_columns').val();
+
+    // cleanup
+    // rows may have been added during previous updates
+    var oTable=document.getElementById("infotable");
+    var oRow=undefined;
+    //$.get('/pysite/pydrraw/data/{{ info.filename }}/'+ds+'/'+rra, function(result) {
+    {% url 'pydrraw:dataview' info.rrdpathname info.rrd ds rra as dataurl %}
+    $.get('{{ dataurl }}', function(result) {
+      console.log(result);
+      var result = eval('(' + result + ')');
+      for (var i in result) {
+        if ((i%col)==0) {
+          // One new row every col
+          oRow=oTable.insertRow(-1);
+          var oCell=oRow.insertCell(-1);
+          oCell.innerHTML=i;
+        }
+        var oCell=oRow.insertCell(-1);
+        oCell.colSpan=20/col;
+        var el=result[i][1];
+        if (el!=undefined) {
+         oCell.innerHTML=Math.round(el);
+        } else {
+         oCell.innerHTML="-";
+        }
+      }
+    })
+  } 
+</script>
+{% endblock %}

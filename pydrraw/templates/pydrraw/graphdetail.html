@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>{{ graph }}</h1>
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<table class="table table-bordered">
+  <tbody>
+	{% for object in object_list %}
+    <tr>
+      <td>{{ object.rrdpath }}</td>
+      <td>{{ object.itemtype }}</td>
+      <td>{{ object.linetype }}</td>
+      <td>{{ object.stack }}</td>
+      <td>{{ object.color }}</td>
+      <td>{{ object.rra }}</td>
+      <td>{{ object.ds }}</td>
+      <td>{{ object.option_text }}</td>
+    </tr>
+	{% endfor %}
+  </tbody>
+</table>
+
+
+{% endblock %}

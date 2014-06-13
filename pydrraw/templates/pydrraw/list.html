@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>pydRRAw. A front end for RRDs inspired by dRRAw</h1>
+<table class="table table-bordered">
+  <tbody>
+    {% for rrd in rrds %}
+      <tr>
+        <td>{{ rrd.subpath }}</td>
+        <td>{{ rrd.rootdir }}</td>
+	{% url 'pydrraw:headerinfo' rrd.rootdir rrd.subpath as infourl %}
+	{% url 'pydrraw:rawview' rrd.rootdir rrd.subpath as rawurl %}
+	{% url 'pydrraw:graphview' rrd.rootdir rrd.subpath as graphurl %}
+        <td>{{ infourl }}</td>
+        <td><a href="{{ infourl }}">Header Info</a></td>
+        <td><a href='{{ rawurl }}'>Raw Data</a></td>
+        <td><a href='{{ graphurl }}'>Graph</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
