@@ -139,6 +139,7 @@ class GraphItems(models.Model):
 #	('#008080','Teal'),
 #	('#00FFFF','Aqua'),
 	}
+
         itemtype = models.CharField(max_length=7, choices=ITEMOPTIONS)
 	rrdds = models.ForeignKey(Rrdfiles)
         linetype = models.CharField(max_length=7, choices=LINEOPTIONS)
@@ -149,23 +150,38 @@ class GraphItems(models.Model):
         option_text = models.CharField(max_length=200, blank=True)
 	#ds = models.CharField(max_length=200)
 	seq = models.IntegerField(max_length=20, null=True)
+
 #        def __unicode__(self):  # Python 3: def __str__(self):
 #                return self.
 
 class Dash(models.Model):
+	RATIOS = {
+	(1, '1'),
+	(2, '2'),
+	(3, '3'),
+	(4, '4'),
+	(5, '5'),
+	(6, '6'),
+	(7, '7'),
+	(8, '8'),
+	}
+	TIMESPANS = {
+	(1800,'Last Half Hour'),
+	}
 	name = models.CharField(max_length=1000)
 	description = models.CharField(max_length=1000)
-	timespan = models.CharField(max_length=200)
+	timespan = models.IntegerField(choices=TIMESPANS)
+	columns = models.IntegerField(choices=RATIOS, default=3)
     	def __unicode__(self):  # Python 3: def __str__(self):
         	return self.name
 
-class DashTables(models.Model):
-        dashboard = models.ForeignKey(Dash)
-        parents = models.ManyToManyField('self', null=True, blank=True)
-	columns = models.IntegerField(null=True)
+#class DashTables(models.Model):
+#        dashboard = models.ForeignKey(Dash)
+#        parents = models.ManyToManyField('self', null=True, blank=True)
+#	columns = models.IntegerField(null=True)
 
 class DashItems(models.Model):
-        table = models.ForeignKey(DashTables)
+        dashboard = models.ForeignKey(Dash)
 	TYPES = {
 	('B','Table'),
 	('S','Static Pydrraw Graph'),
@@ -173,10 +189,20 @@ class DashItems(models.Model):
 	('C','Cacti Image URL'),
 	('G','Graphite Image URL'),
 	}
-	type = models.CharField(max_length=20, choices=TYPES)
+	RATIOS = {
+	(1, '1'),
+	(2, '2'),
+	(3, '3'),
+	(4, '4'),
+	(5, '5'),
+	}
+	type = models.CharField(max_length=20, choices=TYPES, default='S')
 	alttext = models.CharField(max_length=1000)
-	timespan = models.CharField(max_length=200)
-	graphid = models.ManyToManyField(Dgraph, null=True)
+	#timespandelta = models.CharField(max_length=200, blank=True)
+	graphid = models.ForeignKey(Dgraph)
 	seq = models.IntegerField(max_length=20, null=True)
+	widthratio = models.IntegerField(choices=RATIOS, default=1)
+	heightratio = models.IntegerField(choices=RATIOS, default=1)
     	def __unicode__(self):  # Python 3: def __str__(self):
-        	return self.name
+        	return self.graphid
+

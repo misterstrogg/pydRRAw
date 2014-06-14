@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 #from django.forms.models import BaseInlineFormSet
-from pydrraw.models import Dgraph, GraphItems, Rrdpaths, Rrdfiles, Dash, DashItems, DashTables
+from pydrraw.models import Dgraph, GraphItems, Rrdpaths, Rrdfiles, Dash, DashItems
 
 #class GraphItemsAdminFormset():
 #	def add_fields(self, form, index):
@@ -62,14 +62,14 @@ class DashItemsChoice(admin.TabularInline):
 	list_per_page = 10
 	extra = 0
 
-class DashTablesChoice(admin.TabularInline):
-	model = DashTables
-	inlines = [DashItemsChoice]
-	list_per_page = 10
-	extra = 0
+#class DashTablesChoice(admin.TabularInline):
+#	model = DashTables
+#	inlines = [DashItemsChoice]
+#	list_per_page = 10
+#	extra = 0
 
 class DashAdmin(admin.ModelAdmin):
-	inlines = [DashTablesChoice]
+	inlines = [DashItemsChoice]
 	
 # Register your models here.
 admin.site.register(Dgraph, DgraphAdmin)

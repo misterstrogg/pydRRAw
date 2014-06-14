@@ -1,24 +1,26 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+{% load mathfilters %}
 {% load static from staticfiles %}
 <html lang="en">
 	<head>
+	    <meta name="author" content="gyurisc">
 	    <title>{% block title %}{% endblock %}</title>
 	    <!-- Icons -->
 	  	<link rel="shortcut icon" href="/favicon.ico">
 	  	<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 	  	<!-- CSS Styles -->
-	  	<link rel="stylesheet" href="{% static "/static/pydrraw/bootstrap/css/bootstrap.css" %}">
-	    <link rel="stylesheet" href="{% static "/static/pydrraw/bootstrap/css/bootstrap-responsive.css" %}">
+
+		<link rel="stylesheet" type="text/css" href="/static/pydrraw/gridster.js/dist/jquery.gridster.css">
+		<link rel="stylesheet" type="text/css" href="/static/pydrraw/css/style.css">
 	    <!-- Javascripts -->
 	    <script src="{% static "/static/pydrraw/js/jquery-1.7.2.min.js" %}"></script>
-	    <script src="{% static "/static/pydrraw/bootstrap/js/bootstrap.min.js" %}"></script>
-	    <!-- Javascripts -->
+	    <script src="{% static "/static/pydrraw/gridster.js/dist/jquery.gridster.min.js" %}"></script>
 	</head>
 	<body>
 	    {% block content %}{% endblock %}
 	    {% block footer %}
 	    <hr>
-	    <p>copyleft strogg 2014</p>
+	    <p>strogg 2014</p>
 	    {% endblock %}
 	</body>
 </html>

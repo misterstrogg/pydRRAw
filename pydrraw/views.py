@@ -7,7 +7,7 @@ from pyrrd.rrd import DataSource, RRA, RRD
 from pyrrd.graph import DEF, CDEF, VDEF, LINE, AREA, GPRINT, Graph, COMMENT
 import simplejson
 #import json
-from pydrraw.models import Rrdfiles, Rrdpaths, GraphItems, Dgraph
+from pydrraw.models import Rrdfiles, Rrdpaths, GraphItems, Dgraph, Dash, DashItems
 from django.views import generic
 import time
 from sets import Set
@@ -176,6 +176,14 @@ def drawgraph(req, graphid):
 	#make a pyrrd Graph object to add our data to, destination standard out (-)
 	g = Graph('-', imgformat='png', start=str(start), end=str(end), vertical_label='"'+ginfo.name+'"')
 	#populate it with our url params, defaulting to Dgraph instance (ginfo) options
+	fullsizemode = req.GET.get('fullsizemode')
+	if (fullsizemode in ['0', 'False' , 'false', 'no', 'No']):
+		g.full_size_mode = False
+	else:
+		g.full_size_mode = True
+	graphonly = req.GET.get('graphonly')
+	if (graphonly in ['1', 'True' , 'true', 'yes']):
+		g.only_graph = True
 	noleg = req.GET.get('nolegend')
 	if (noleg in ['1', 'True' , 'true', 'yes']):
 		g.no_legend = True
@@ -196,6 +204,24 @@ def drawgraph(req, graphid):
 	#minetype = gobject.linetype.value.upper() #just a thing to cause an error and debug
     	return HttpResponse(a,mimetype="image/png")
 #  return HttpResponse("failed to retrieve graph objects",mimetype="text/plain")
+
+def dash(req, dashid):
+	now = int(time.time())
+	dashobj = Dash.objects.get(pk=dashid)
+	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'widthratio', 'heightratio', 'seq')
+	#dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid'
+	dinfo = {
+	'start' :  (req.GET.get('start', now - (7 * 86400))),
+	'end' : int(req.GET.get('end', now)),
+	'height' : req.GET.get('height', 200),
+	'width' : req.GET.get('width', 300),
+	'nolegend' : req.GET.get('nolegend', 1),
+	'graphonly' : req.GET.get('graphonly', 1),
+	'columns' : req.GET.get('columns', 3),
+	}
+	return render_to_response('pydrraw/dash.html', {'dobjects': dobjects, 'dinfo': dinfo })
+
+
 
 def drawsimplegraph(req, rrdpathname, rrd, ds, rra, height=600, width=1200, start='default', end='default' ):
 	filename = Rrdpaths.objects.get(name=str(rrdpathname)).path 
