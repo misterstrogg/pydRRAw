@@ -7,7 +7,7 @@
 	<ul>
     {% for dobject in dobjects %}
 	{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
-        <li data-row="{{ forloop.counter|mod:dinfo.columns|add:1 }}" data-col="{{ forloop.counter }}" data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"><img src="{{ graphurl }}/?height={{ dinfo.height|mul:dobject.heightratio }}&width={{ dinfo.width|mul:dobject.widthratio }}&nolegend=1&fullsizemode=1" height="{{ dinfo.height|mul:dobject.heightratio }}" width="{{ dinfo.width|mul:dobject.widthratio }}"/></a></li>
+        <li id="{{ dobject.graphid }}" data-row="{{ forloop.counter|mod:dinfo.columns|add:1 }}" data-col="1" data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"><img src="{{ graphurl }}/?height={{ dinfo.height|mul:dobject.heightratio }}&width={{ dinfo.width|mul:dobject.widthratio }}&nolegend=1&fullsizemode=1" height="{{ dinfo.height|mul:dobject.heightratio }}" width="{{ dinfo.width|mul:dobject.widthratio }}"/></a></li>
     {% empty %}
 	<li> No Dash Items Found </li>
     {% endfor %}
@@ -27,13 +27,27 @@ $(function () { //DOM Ready
 	helper: 'clone',
 	avoid_overlapped_widgets: true,
 	resize: {
-	   enabled: true
+	   enabled: true,
+	   stop: function(event, ui) {
+		elid = this.$el.context.lastElementChild.id;
+		{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
+		newwidth =  parseInt(this.resize_initial_width, 10) * parseInt(this.resize_last_sizex, 10);
+		
+		myheight =  parseInt(this.resize_initial_height, 10);
+		heightratio =  parseInt(this.resize_last_sizey, 10);
+		newheight = myheight * heightratio;
+		newgraphurl = '{{ graphurl }}' + this.$el.context.lastElementChild.id + '?height=' + newheight + '&width=' + newwidth + '&nolegend=1&fullsizemode=1';
+
+		console.log(this);
+		console.log(this.$el.context.lastElementChild.id);
+		console.log(this.$el.context.lastElementChild.innerHTML);
+		document.getElementById(this.$el.context.lastElementChild.id).innerHTML = "<img src=" + newgraphurl + "/>";
+		console.log(this);
+   		var gridData = JSON.stringify(gridstervar.serialize());
+		console.log(gridData);
+	   },
 	},
-
-    })
-
-        var gridster = $(".gridster ul").gridster( {
-		serialize_params: function($w, wgd) { 
+	serialize_params: function($w, wgd) { 
                    return { 
                            id: wgd.el[0].id, 
                            col: wgd.col, 
@@ -41,24 +55,27 @@ $(function () { //DOM Ready
                            size_x: wgd.size_x, 
                            size_y: wgd.size_y 
                     };
-        	},
-		draggable: {
+        },
+	draggable: {
 //			handle: '.handle',
 			stop: function(event, ui) {
-	        		var gridData = JSON.stringify(gridster.serialize());
+	        		var gridData = JSON.stringify(gridstervar.serialize());
 				console.log(gridData);
 			},
-		},
-	}).data('gridster');
-	        		var gridData = JSON.stringify(gridster.serialize());
-				console.log(gridData);
-//	$( "#draggable" ).draggable();
- //       $( ".gridster " ).droppable({
-  //         drop: function( event, ui ) {
-   //           $( "#draggable" ).removeAttr("style");
-    //  	   }
-    //	});
+	},
+    })
 
+        gridstervar = $(".gridster ul").gridster( {
+	}).data('gridster');
+	var gridData = JSON.stringify(gridstervar.serialize());
+	console.log(gridData);
+        gridstervar.$el
+          .on('mouseenter', '> li', function() {
+              gridster.resize_widget($(this), 3, 3);
+          })
+          .on('mouseleave', '> li', function() {
+              gridster.resize_widget($(this), 1, 1);
+          });
 });
 </script>
 {% endblock %}
