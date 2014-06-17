@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 #from django.forms.models import BaseInlineFormSet
-from pydrraw.models import Dgraph, GraphItems, Rrdpaths, Rrdfiles, Dash, DashItems
+from pydrraw.models import Dgraph, GraphItems, Rrdpaths, Rrdfiles, Dash, DashItems, DashLayouts
 
 #class GraphItemsAdminFormset():
 #	def add_fields(self, form, index):
@@ -74,4 +74,5 @@ class DashAdmin(admin.ModelAdmin):
 # Register your models here.
 admin.site.register(Dgraph, DgraphAdmin)
 admin.site.register(Rrdpaths, RrdPathsAdmin)
+admin.site.register(DashLayouts)
 admin.site.register(Dash, DashAdmin)

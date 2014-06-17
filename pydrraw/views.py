@@ -1,16 +1,21 @@
 # Create your views here.
-from django.http import HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404, get_list_or_404
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404, get_list_or_404, render
+from django.template import RequestContext
+from django.core.urlresolvers import reverse
 import os
 import re
 from pyrrd.rrd import DataSource, RRA, RRD
-from pyrrd.graph import DEF, CDEF, VDEF, LINE, AREA, GPRINT, Graph, COMMENT
+from pyrrd.graph import DEF, CDEF, VDEF, LINE, AREA, GPRINT, Graph, COMMENT, ColorAttributes
 import simplejson
 #import json
 from pydrraw.models import Rrdfiles, Rrdpaths, GraphItems, Dgraph, Dash, DashItems
 from django.views import generic
 import time
 from sets import Set
+from django.forms import ModelForm
+from django.forms.models import inlineformset_factory
+
 
 #rrdPath = 'DjangoRRD/public/rrds/'
 #rrdPath = '/usr/var/lib/collectd/rrd/worm.circuit5.com/memory/'
@@ -90,7 +95,20 @@ def oldgraph(req, rrdpathname, rrd):
 		info['rrd'] = rrd
                 return render_to_response('pydrraw/graph.html', {'info': info})
     	#return HttpResponse(full_filename,mimetype="text/plain")
-
+def secsago(req):
+	seconds = int(req.GET.get('seconds', 0))
+	minutes = int(req.GET.get('minutes', 0))
+	hours = int(req.GET.get('hours', 0))
+	days = int(req.GET.get('days', 0))
+	weeks = int(req.GET.get('weeks', 0))
+	months = int(req.GET.get('months', 0))
+	years = int(req.GET.get('years', 0))
+	timelagratio = req.GET.get('timelagratio', 1)
+	secsago = (seconds + (minutes*60) + (hours*60*60) + (days*24*3600) + (weeks*7*24*3600) + (months*30*24*3600) + (years*365*24*3600))
+	if secsago == 0:
+		secsago = 3600
+	secsago = timelagratio * secsago
+	return int(secsago)
 
 def drawgraph(req, graphid):
 	now = int(time.time())
@@ -98,8 +116,10 @@ def drawgraph(req, graphid):
 	gobjects = GraphItems.objects.filter(graph__id=graphid).order_by('seq')
 	gitems = []
 
-	start = req.GET.get('start', now - (7 * 86400))
-	end = req.GET.get('end', now)
+	secondsago = secsago(req)
+	end = int(req.GET.get('end', now))
+	start = int(req.GET.get('start', end - secondsago))
+
 
 	for gobject in gobjects: #cycle through graph items...need to order this above
 
@@ -114,12 +134,13 @@ def drawgraph(req, graphid):
                 gitems.append(DEF(rrdfile=filename, vname='d'+namesuff, dsName=rrdds))
 		gitems.append(CDEF(vname='c'+namesuff, rpn='%s' % 'd'+namesuff))
 		linetype = gobject.linetype.upper()
+		mycolor = gobject.color + gobject.transparency
 		if linetype == 'A':
-			gitems.append(AREA(value='c'+namesuff, color=gobject.color, legend=legendtext, stack=gobject.stack))
+			gitems.append(AREA(value='c'+namesuff, color=mycolor, legend=legendtext, stack=gobject.stack))
 		elif linetype[:1] == 'L':
-			gitems.append(LINE(linetype[-1:], 'c'+namesuff, color=gobject.color, legend=legendtext, stack=gobject.stack))
+			gitems.append(LINE(linetype[-1:], 'c'+namesuff, color=mycolor, legend=legendtext, stack=gobject.stack))
 		else:
-			gitems.append(LINE(0, 'c'+namesuff, color=gobject.color, legend=legendtext, stack=gobject.stack))
+			gitems.append(LINE(0, 'c'+namesuff, color=mycolor, legend=legendtext, stack=gobject.stack))
 
 	    if gobject.itemtype == 'R':  #Handle Regex
 	     	regtextarr = gobject.option_text.rsplit(' ',2)
@@ -171,10 +192,20 @@ def drawgraph(req, graphid):
 
 	    if gobject.itemtype == 'V': #Handle Custom VDEFs
 		pass
-			
+
+   	ca = ColorAttributes()
+   	ca.back = '#333333'
+   	ca.canvas = '#333333'
+   	ca.shadea = '#000000'
+   	ca.shadeb = '#111111'
+   	ca.mgrid = '#CCCCCC'
+   	ca.axis = '#FFFFFF'
+   	ca.frame = '#AAAAAA'
+ 	ca.font = '#FFFFFF'
+	ca.arrow = '#FFFFFF'
 
 	#make a pyrrd Graph object to add our data to, destination standard out (-)
-	g = Graph('-', imgformat='png', start=str(start), end=str(end), vertical_label='"'+ginfo.name+'"')
+	g = Graph('-', imgformat='png', start=start, end=end, color=ca, vertical_label='"'+ginfo.name+'"')
 	#populate it with our url params, defaulting to Dgraph instance (ginfo) options
 	fullsizemode = req.GET.get('fullsizemode')
 	if (fullsizemode in ['0', 'False' , 'false', 'no', 'No']):
@@ -208,15 +239,18 @@ def drawgraph(req, graphid):
 def dash(req, dashid):
 	now = int(time.time())
 	dashobj = Dash.objects.get(pk=dashid)
-	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'widthratio', 'heightratio', 'seq')
-	#dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid'
+	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'type', 'widthratio', 'heightratio', 'seq', 'timelagratio', 'alttext').order_by('seq')
+	secondsago = secsago(req)
+	end = int(req.GET.get('end', now))
+	start = int(req.GET.get('start', end - secondsago))
 	dinfo = {
-	'start' :  (req.GET.get('start', now - (7 * 86400))),
-	'end' : int(req.GET.get('end', now)),
+	'start' : start,
+	'end' : end,
 	'height' : req.GET.get('height', 200),
+
 	'width' : req.GET.get('width', 300),
 	'nolegend' : req.GET.get('nolegend', 1),
-	'graphonly' : req.GET.get('graphonly', 1),
+	'graphonly' : req.GET.get('graphonly', False),
 	'columns' : req.GET.get('columns', 3),
 	}
 	return render_to_response('pydrraw/dash.html', {'dobjects': dobjects, 'dinfo': dinfo })
@@ -248,5 +282,51 @@ def drawsimplegraph(req, rrdpathname, rrd, ds, rra, height=600, width=1200, star
 		a = g.write()
     		return HttpResponse(a,content_type="image/png")
     		#return HttpResponse(dir(g),content_type="text/plain")
+
+GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=1)
+
+class EditGraphItemForm(ModelForm):
+	class Meta:
+		model = GraphItems
+		fields = '__all__'
+	
+class EditGraphForm(ModelForm):
+	class Meta:
+		model = Dgraph
+		fields = '__all__'
+
+def addgraph(req, graphid):
+        form = EditGraphForm(req.POST or None)
+    	return render(req, 'pydrraw/editgraph.html', { 'form': form, })
+	
+
+def editgraph(req, graphid=None):
+
+    if graphid:
+		ginfo = get_object_or_404(Dgraph, pk=graphid)
+    else:
+		ginfo = Dgraph()
+
+    if req.method == 'POST': 
+        form = EditGraphForm(req.POST, instance=ginfo)
+	#formset = GraphItemFormSet(instance=ginfo)
+        if form.is_valid(): 
+	    g_form = form.save(commit=False)
+	    gi_formset = GraphItemFormSet(req.POST, instance=g_form)
+       	    if gi_formset.is_valid(): 
+	    	g_form.save()
+		gi_formset.save()
+		status = 'Saved!'
+		#return HttpResponseRedirect(reverse('posted'))
+	    else:
+		status = 'Formset failed to validate!'
+	else:
+	    status = 'Form failed to validate!'
+    else:
+        form = EditGraphForm(instance=ginfo)
+	gi_formset = GraphItemFormSet(instance=Dgraph())
+	status = 'Unsaved'
+
+    return render_to_response('pydrraw/editgraph.html', {'form': form, 'gi_formset': gi_formset, 'graphid':graphid, 'status':status, }, context_instance=RequestContext(req))
 
 

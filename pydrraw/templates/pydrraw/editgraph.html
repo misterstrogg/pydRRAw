@@ -1,0 +1,18 @@
+<form method="post" action="{% url 'pydrraw:editgraph' graphid %}">
+{% csrf_token %}
+<table><tr>
+{{ form }}
+</tr></table>
+<table><tr>
+{% for gform in gi_formset %}
+<tr>
+	{% for field in gform %}
+    <td>{{ field.errors }} {{ field.label_tag }}{{ field }}</td>
+	{% endfor %}
+</tr>
+{% endfor %}
+</tr></table>
+
+<input type="submit" value="Save" />
+{{ status }}
+</form>

@@ -60,6 +60,26 @@ class Rrdfiles(models.Model):
         	#return (self.subpath)
 
 class Dgraph(models.Model):
+    COLORS = {
+	('#000066','SkyBlue'),
+	('#000000','Black'),
+	('#C0C0C0','Silver'),
+	('#808080','Gray'),
+	('#FFFFFF','White'),
+	('#800000','Maroon'),
+	('#FF0000','Red'),
+	('#800080','Purple'),
+	('#FF00FF','Fuchsia'),
+	('#008000','Green'),
+	('#00FF00','Lime'),
+	('#808000','Olive'),
+	('#FFFF00','Yellow'),
+	('#FFA500','Orange'),
+	('#000080','Navy'),
+	('#0000FF','Blue'),
+	('#008080','Teal'),
+	('#00FFFF','Aqua'),
+	}
     name = models.CharField(max_length=200)
     vertical_label = models.CharField(max_length=100)
     graph_options = models.CharField(max_length=200, blank=True)
@@ -75,7 +95,7 @@ class Dgraph(models.Model):
     y_grid = models.BooleanField(default=False)
     alt_y_grid = models.BooleanField(default=False)
     units_exponent = models.BooleanField(default=False)
-    color = models.CharField(max_length=200, blank=True)
+    color = models.CharField(max_length=200, blank=True, choices=COLORS)
     zoom = models.BooleanField(default=False)
     font = models.CharField(max_length=200, blank=True)
     font_render_mode = models.CharField(max_length=200, blank=True)
@@ -124,20 +144,20 @@ class GraphItems(models.Model):
 	('#000000','Black'),
 	('#C0C0C0','Silver'),
 	('#808080','Gray'),
-#	('#FFFFFF','White'),
-#	('#800000','Maroon'),
-#	('#FF0000','Red'),
-#	('#800080','Purple'),
-#	('#FF00FF','Fuchsia'),
-#	('#008000','Green'),
-#	('#00FF00','Lime'),
-#	('#808000','Olive'),
-#	('#FFFF00','Yellow'),
-#	('#FFA500','Orange'),
-#	('#000080','Navy'),
-#	('#0000FF','Blue'),
-#	('#008080','Teal'),
-#	('#00FFFF','Aqua'),
+	('#FFFFFF','White'),
+	('#800000','Maroon'),
+	('#FF0000','Red'),
+	('#800080','Purple'),
+	('#FF00FF','Fuchsia'),
+	('#008000','Green'),
+	('#00FF00','Lime'),
+	('#808000','Olive'),
+	('#FFFF00','Yellow'),
+	('#FFA500','Orange'),
+	('#000080','Navy'),
+	('#0000FF','Blue'),
+	('#008080','Teal'),
+	('#00FFFF','Aqua'),
 	}
 
         itemtype = models.CharField(max_length=7, choices=ITEMOPTIONS)
@@ -145,6 +165,7 @@ class GraphItems(models.Model):
         linetype = models.CharField(max_length=7, choices=LINEOPTIONS)
 	stack = models.BooleanField(default=1)
         color = models.CharField(max_length=7, choices=COLORS)
+        transparency = models.CharField(max_length=2, default='FF')
         rra = models.CharField(max_length=7, choices=RRAS)
         #seq = models.IntegerField(max_length=2)
         option_text = models.CharField(max_length=200, blank=True)
@@ -172,13 +193,15 @@ class Dash(models.Model):
 	description = models.CharField(max_length=1000)
 	timespan = models.IntegerField(choices=TIMESPANS)
 	columns = models.IntegerField(choices=RATIOS, default=3)
+	serialized_layout = models.CharField(max_length=1000, null=True)
     	def __unicode__(self):  # Python 3: def __str__(self):
         	return self.name
 
-#class DashTables(models.Model):
-#        dashboard = models.ForeignKey(Dash)
-#        parents = models.ManyToManyField('self', null=True, blank=True)
-#	columns = models.IntegerField(null=True)
+class DashLayouts(models.Model):
+        dashboard = models.OneToOneField(Dash, primary_key=True)
+	serialized_layout = models.CharField(max_length=1000, blank=True)
+    	def __unicode__(self):  # Python 3: def __str__(self):
+        	return "%s" % self.serialized_layout
 
 class DashItems(models.Model):
         dashboard = models.ForeignKey(Dash)
@@ -197,12 +220,12 @@ class DashItems(models.Model):
 	(5, '5'),
 	}
 	type = models.CharField(max_length=20, choices=TYPES, default='S')
-	alttext = models.CharField(max_length=1000)
-	#timespandelta = models.CharField(max_length=200, blank=True)
+	alttext = models.CharField(max_length=1000, blank=True)
 	graphid = models.ForeignKey(Dgraph)
 	seq = models.IntegerField(max_length=20, null=True)
 	widthratio = models.IntegerField(choices=RATIOS, default=1)
 	heightratio = models.IntegerField(choices=RATIOS, default=1)
+	timelagratio = models.IntegerField(max_length=200, default=1)
     	def __unicode__(self):  # Python 3: def __str__(self):
         	return self.graphid
 
