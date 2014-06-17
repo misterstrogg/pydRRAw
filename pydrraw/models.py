@@ -4,6 +4,52 @@ from django.utils import timezone
 from smart_selects.db_fields import GroupedForeignKey
 from pyrrd.rrd import RRD
 
+class GraphColorScheme(models.Model):
+	COLORS = {
+	('#000066','SkyBlue'),
+	('#000000','Black'),
+	('#C0C0C0','Silver'),
+	('#808080','Gray'),
+	('#FFFFFF','White'),
+	('#800000','Maroon'),
+	('#FF0000','Red'),
+	('#800080','Purple'),
+	('#FF00FF','Fuchsia'),
+	('#008000','Green'),
+	('#00FF00','Lime'),
+	('#808000','Olive'),
+	('#FFFF00','Yellow'),
+	('#FFA500','Orange'),
+	('#000080','Navy'),
+	('#0000FF','Blue'),
+	('#008080','Teal'),
+	('#00FFFF','Aqua'),
+	}
+	name = models.CharField(max_length=20, primary_key=True)
+	name.unique
+    	cback = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tback = models.CharField(max_length=2, blank=True)
+    	ccanvas = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tcanvas = models.CharField(max_length=2, blank=True)
+    	cshadea = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tshadea = models.CharField(max_length=2, blank=True)
+    	cshadeb = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tshadeb = models.CharField(max_length=2, blank=True, verbose_name="Shade B Transparency")
+    	cmgrid = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tmgrid = models.CharField(max_length=2, blank=True, )
+    	caxis = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	taxis = models.CharField(max_length=2, blank=True, )
+    	cframe = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tframe = models.CharField(max_length=2, blank=True, )
+    	cfont = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tfont = models.CharField(max_length=2, blank=True, )
+    	carrow = models.CharField(max_length=7, blank=True, choices=COLORS)
+    	tarrow = models.CharField(max_length=2, blank=True, )
+    	def __unicode__(self): 
+		return self.name
+	
+
+
 class Rrdpaths(models.Model):
 	name = models.CharField(max_length=20, primary_key=True)
 	name.unique
@@ -188,12 +234,24 @@ class Dash(models.Model):
 	}
 	TIMESPANS = {
 	(1800,'Last Half Hour'),
+	(3600,'Last Hour'),
+	(86400,'Last Day'),
+	(365*86400,'Last Year'),
 	}
 	name = models.CharField(max_length=1000)
 	description = models.CharField(max_length=1000)
 	timespan = models.IntegerField(choices=TIMESPANS)
-	columns = models.IntegerField(choices=RATIOS, default=3)
-	serialized_layout = models.CharField(max_length=1000, null=True)
+	columns = models.IntegerField(default=4)
+	width = models.IntegerField(default=400)
+	height = models.IntegerField(default=200)
+	hmargin = models.IntegerField(default=2)
+	vmargin = models.IntegerField(default=2)
+	nolegend = models.BooleanField(default=True)
+	graphonly = models.BooleanField(default=False)
+	forcecolor = models.BooleanField(default=True)
+	gcolorscheme = models.ForeignKey(GraphColorScheme, default='default')
+	#dcolorscheme = models.ForeignKey(GraphColorScheme)
+	serialized_layout = models.CharField(max_length=1000, blank=True)
     	def __unicode__(self):  # Python 3: def __str__(self):
         	return self.name
 

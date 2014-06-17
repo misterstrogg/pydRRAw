@@ -8,7 +8,7 @@
     {% for dobject in dobjects %}
       {% if dobject.type == 'S' %} 
 	{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"><img src="{{ graphurl }}/?height={{ dinfo.height|mul:dobject.heightratio }}&width={{ dinfo.width|mul:dobject.widthratio }}&start={{ dinfo.end|sub:dinfo.start|mul:dobject.timelagratio|mul:-1|add:dinfo.end }}&end={{ dinfo.end }}&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}"/></li>
+        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"><img src="{{ graphurl }}/?height={{ dinfo.height|mul:dobject.heightratio }}&width={{ dinfo.width|mul:dobject.widthratio }}&start={{ dinfo.end|sub:dinfo.start|mul:dobject.timelagratio|mul:-1|add:dinfo.end }}&end={{ dinfo.end }}&nolegend={{ dinfo.nolegend }}&cs={{ dinfo.colorscheme }}&fullsizemode=1&graphonly={{ dinfo.graphonly }}"/></li>
       {% else %}
         <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"><img src="{{ dobject.alttext }}&height={{ dinfo.height|mul:dobject.heightratio }}&width={{ dinfo.width|mul:dobject.widthratio }}&start={{ dinfo.end|sub:dinfo.start|mul:dobject.timelagratio|mul:-1|add:dinfo.end }}&end={{ dinfo.end }}&hideLegend=1&fullsizemode=1&graphOnly={{ dinfo.graphonly }}"/></li>
       {% endif %}
@@ -18,8 +18,9 @@
 	  </ul></div>
 
 
+<H2>{{ dinfo.title }}:{{ dinfo.desc }}</H2>
 </section>
-<h1>pydRRAw. A front end for RRDs inspired by dRRAw</h1>
+
 {% endblock %}
 {% block script %}
 <script type="text/javascript">
@@ -41,7 +42,7 @@ $(window).ready(function () {
 			{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
 			newgraphurl = '{{ graphurl }}' + $(id_name)[0].dataset.graphid + '?height=' + newheight + '&width=' + newwidth + '&start=' + newstart + '&end=' + {{ dinfo.end }} + '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
 			} else {
-			newgraphurl = $(id_name)[0].dataset.alttext + '&height=' + newheight + '&width=' + newwidth + '&start=' + newstart + '&end=' + {{ dinfo.end }} + '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
+			newgraphurl = $(id_name)[0].dataset.alttext + '&height=' + newheight + '&width=' + newwidth + '&from=' + newstart + '&until=' + {{ dinfo.end }} + '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
 			}
 			$(id_name)[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";
 
@@ -71,7 +72,7 @@ $(function () { //DOM Ready
 			{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
 			newgraphurl = '{{ graphurl }}' + this.$resized_widget[0].dataset.graphid + '?height=' + newheight + '&width=' + newwidth + '&start=' + newstart + '&end=' + {{ dinfo.end }} + '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
 		} else {
-			newgraphurl = this.$resized_widget[0].dataset.alttext + '&height=' + newheight + '&width=' + newwidth + '&start=' + newstart + '&end=' + {{ dinfo.end }} + '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
+			newgraphurl = this.$resized_widget[0].dataset.alttext + '&height=' + newheight + '&width=' + newwidth + '&from=' + newstart + '&until=' + {{ dinfo.end }} + '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
 		}
 		console.log(newgraphurl);
 		this.$resized_widget[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";

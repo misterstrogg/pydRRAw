@@ -9,7 +9,7 @@ from pyrrd.rrd import DataSource, RRA, RRD
 from pyrrd.graph import DEF, CDEF, VDEF, LINE, AREA, GPRINT, Graph, COMMENT, ColorAttributes
 import simplejson
 #import json
-from pydrraw.models import Rrdfiles, Rrdpaths, GraphItems, Dgraph, Dash, DashItems
+from pydrraw.models import *
 from django.views import generic
 import time
 from sets import Set
@@ -105,8 +105,7 @@ def secsago(req):
 	years = int(req.GET.get('years', 0))
 	timelagratio = req.GET.get('timelagratio', 1)
 	secsago = (seconds + (minutes*60) + (hours*60*60) + (days*24*3600) + (weeks*7*24*3600) + (months*30*24*3600) + (years*365*24*3600))
-	if secsago == 0:
-		secsago = 3600
+
 	secsago = timelagratio * secsago
 	return int(secsago)
 
@@ -117,6 +116,10 @@ def drawgraph(req, graphid):
 	gitems = []
 
 	secondsago = secsago(req)
+	if secondsago == 0:
+		secondsago = 3600
+	#	secsago = ginfo.timespan
+	
 	end = int(req.GET.get('end', now))
 	start = int(req.GET.get('start', end - secondsago))
 
@@ -192,9 +195,10 @@ def drawgraph(req, graphid):
 
 	    if gobject.itemtype == 'V': #Handle Custom VDEFs
 		pass
-
+	cs = req.GET.get('cs', 'default')
+	colsch = GraphColorScheme.objects.get(pk=cs)
    	ca = ColorAttributes()
-   	ca.back = '#333333'
+   	ca.back = colsch.cback + colsch.tback
    	ca.canvas = '#333333'
    	ca.shadea = '#000000'
    	ca.shadeb = '#111111'
@@ -240,18 +244,26 @@ def dash(req, dashid):
 	now = int(time.time())
 	dashobj = Dash.objects.get(pk=dashid)
 	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'type', 'widthratio', 'heightratio', 'seq', 'timelagratio', 'alttext').order_by('seq')
+	
+	#handle time shorthand
 	secondsago = secsago(req)
+	if secondsago <= 0:
+		secondsago = dashobj.timespan
 	end = int(req.GET.get('end', now))
 	start = int(req.GET.get('start', end - secondsago))
 	dinfo = {
 	'start' : start,
 	'end' : end,
-	'height' : req.GET.get('height', 200),
-
-	'width' : req.GET.get('width', 300),
-	'nolegend' : req.GET.get('nolegend', 1),
-	'graphonly' : req.GET.get('graphonly', False),
-	'columns' : req.GET.get('columns', 3),
+	#get rest of info from dash object, allow url override
+	'width' : req.GET.get('width', dashobj.width),
+	'height' : req.GET.get('height', dashobj.height),
+	'nolegend' : req.GET.get('nolegend', dashobj.nolegend),
+	'graphonly' : req.GET.get('graphonly', dashobj.graphonly),
+	'columns' : req.GET.get('columns', dashobj.columns),
+	'title' : req.GET.get('title', dashobj.name),
+	'desc' : req.GET.get('desc', dashobj.description),
+	'forcecolor' : req.GET.get('forcecolor', dashobj.forcecolor),
+	'cs' : req.GET.get('cs', dashobj.gcolorscheme),
 	}
 	return render_to_response('pydrraw/dash.html', {'dobjects': dobjects, 'dinfo': dinfo })
 
