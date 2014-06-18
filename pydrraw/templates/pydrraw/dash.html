@@ -8,9 +8,9 @@
     {% for dobject in dobjects %}
       {% if dobject.type == 'S' %} 
 	{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"><img src="{{ graphurl }}/?height={{ dinfo.height|mul:dobject.heightratio }}&width={{ dinfo.width|mul:dobject.widthratio }}&start={{ dinfo.end|sub:dinfo.start|mul:dobject.timelagratio|mul:-1|add:dinfo.end }}&end={{ dinfo.end }}&nolegend={{ dinfo.nolegend }}&cs={{ dinfo.colorscheme }}&fullsizemode=1&graphonly={{ dinfo.graphonly }}"/></li>
+        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
       {% else %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"><img src="{{ dobject.alttext }}&height={{ dinfo.height|mul:dobject.heightratio }}&width={{ dinfo.width|mul:dobject.widthratio }}&start={{ dinfo.end|sub:dinfo.start|mul:dobject.timelagratio|mul:-1|add:dinfo.end }}&end={{ dinfo.end }}&hideLegend=1&fullsizemode=1&graphOnly={{ dinfo.graphonly }}"/></li>
+        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
       {% endif %}
     {% empty %}
 	<li> No Dash Items Found </li>
@@ -25,31 +25,54 @@
 {% block script %}
 <script type="text/javascript">
 $(window).ready(function () {
-	var localData = JSON.parse(localStorage.getItem('griddata'));
-	
+	var localData;
+	localData = JSON.parse(localStorage.getItem('griddata'));
+	var serverlayout={{ dinfo.serialized_layout|safe }};
+	if(localData==null)  {
+		//localData=JSON.parse(serverlayout);
+		localData=serverlayout;
+	}
+//	}
 	if(localData!=null) {
 		$.each(localData, function(i,value){
-	
     			var id_name;
 			id_name="#";
 			id_name = id_name + value.id;
 			$(id_name).attr({"data-col":value.col, "data-row":value.row, "data-sizex":value.size_x, "data-sizey":value.size_y});
-
 			newwidth =  {{ dinfo.width }} * ($(id_name)[0].dataset.sizex);
 			newheight =  {{ dinfo.height }} * ($(id_name)[0].dataset.sizey);
-			newstart = parseInt(({{ dinfo.end }} - {{ dinfo.start }}) * ($(id_name)[0].dataset.timelagratio) * (-1) + {{ dinfo.end }}); //weird math is just to mirror fuxor mathfilters math above
+			newstart = parseInt(({{ dinfo.end }} - {{ dinfo.start }}) * 
+			   ($(id_name)[0].dataset.timelagratio) * (-1) + {{ dinfo.end }}); 
+			var fc = '{{ dinfo.forcecolor }}';
 			if ($(id_name)[0].dataset.gtype == 'S') {
-			{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
-			newgraphurl = '{{ graphurl }}' + $(id_name)[0].dataset.graphid + '?height=' + newheight + '&width=' + newwidth + '&start=' + newstart + '&end=' + {{ dinfo.end }} + '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
+			rawgraphurl = $(id_name)[0].dataset.alttext + '?' 
+			timeurlappend = '&start=' + newstart + '&end=' + {{ dinfo.end }};
+			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
+			styleurlappend = '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
+			  if (fc == 'True') {
+				styleurlappend+='&cs={{ dinfo.cs }}';
+			  }
 			} else {
-			newgraphurl = $(id_name)[0].dataset.alttext + '&height=' + newheight + '&width=' + newwidth + '&from=' + newstart + '&until=' + {{ dinfo.end }} + '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
+			rawgraphurl = $(id_name)[0].dataset.alttext 
+			timeurlappend = '&from=' + newstart + '&until=' + {{ dinfo.end }};
+			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
+			styleurlappend = '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
+			  if (fc == 'True') {
+				//main colors want no leading #
+				styleurlappend+='&bgcolor=' + '{{ csobj.cback }}'.substring(1);
+				styleurlappend+='&fgcolor=' + '{{ csobj.cfont }}'.substring(1);
+				styleurlappend+='&majorGridLineColor=' + '{{ csobj.cmgrid }}';
+			  }
 			}
-			$(id_name)[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";
-
+			imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
+			linkurl = rawgraphurl + timeurlappend + '&height=' + $(window).height() + '&width=' + $(window).width();;
+			$(id_name)[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "'><span class='gs-resize-handle gs-resize-handle-both'></span> ";
+			//$(id_name)[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";
 
 		});
 	} else {
-		console.log('No data returned by the server');	
+		console.log('No data returned by the server: ' + localData);	
+		console.log('btw: ' + serverlayout);	
 	}
 });
 $(function () { //DOM Ready
@@ -68,14 +91,30 @@ $(function () { //DOM Ready
 		newheight =  parseInt(this.resize_initial_height, 10) / parseInt(this.resize_initial_sizey, 10) * parseInt(this.resize_last_sizey, 10);
 		newstart = parseInt(({{ dinfo.end }} - {{ dinfo.start }}) * (this.$resized_widget[0].dataset.timelagratio) * (-1) + {{ dinfo.end }}); //weird math is just to mirror fuxor mathfilters math above
 		console.log(this);
+			var fc = '{{ dinfo.forcecolor }}';
 		if (this.$resized_widget[0].dataset.gtype == 'S') {
-			{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
-			newgraphurl = '{{ graphurl }}' + this.$resized_widget[0].dataset.graphid + '?height=' + newheight + '&width=' + newwidth + '&start=' + newstart + '&end=' + {{ dinfo.end }} + '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
+			rawgraphurl = this.$resized_widget[0].dataset.alttext + '?';
+			timeurlappend = '&start=' + newstart + '&end=' + {{ dinfo.end }};
+			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
+			styleurlappend = '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
+			  if (fc == 'True') {
+				styleurlappend+='&cs={{ dinfo.cs }}';
+			  }
 		} else {
-			newgraphurl = this.$resized_widget[0].dataset.alttext + '&height=' + newheight + '&width=' + newwidth + '&from=' + newstart + '&until=' + {{ dinfo.end }} + '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
+			rawgraphurl = this.$resized_widget[0].dataset.alttext;
+			timeurlappend = '&from=' + newstart + '&until=' + {{ dinfo.end }};
+			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
+			styleurlappend = '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
+			  if (fc == 'True') {
+				styleurlappend+='&bgcolor=' + '{{ csobj.cback }}'.substring(1);
+				styleurlappend+='&fgcolor=' + '{{ csobj.cfont }}'.substring(1);
+				styleurlappend+='&majorGridLineColor=' + '{{ csobj.cmgrid }}';
+			  }
 		}
-		console.log(newgraphurl);
-		this.$resized_widget[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";
+		imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
+		linkurl = rawgraphurl + '&height=' + $(window).height() + '&width=' + $(window).width() + timeurlappend;
+		this.$resized_widget[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "'><span class='gs-resize-handle gs-resize-handle-both'></span> ";
+			//$(id_name)[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";
    		var gridData = JSON.stringify(gridstervar.serialize());
 		console.log(gridData);
 		localStorage.setItem('griddata', gridData);
@@ -102,5 +141,6 @@ $(function () { //DOM Ready
         gridstervar = $(".gridster ul").gridster( {
 	}).data('gridster');
 });
+
 </script>
 {% endblock %}

@@ -15,7 +15,7 @@ import time
 from sets import Set
 from django.forms import ModelForm
 from django.forms.models import inlineformset_factory
-
+from django.db import transaction
 
 #rrdPath = 'DjangoRRD/public/rrds/'
 #rrdPath = '/usr/var/lib/collectd/rrd/worm.circuit5.com/memory/'
@@ -37,14 +37,10 @@ def paths(req, rrdpathname):
 	
 
 def list(req, rrdpathname):
-#	rrds = os.listdir(rrdPath)
         if (rrdpathname == "all"):
-#                rrds = Rrdpaths.listfiles(rrdsource)
-#	return render_to_response('pydrraw/list.html', {'rrds': rrds})
 	        rrds = Rrdfiles.objects.all()
 	else:
 		rrds = Rrdfiles.objects.filter(rootdir__name=rrdpathname)
-
 	return render_to_response('pydrraw/list.html', {'rrds': rrds, 'rrdpathname': rrdpathname})
 
 
@@ -150,6 +146,7 @@ def drawgraph(req, graphid):
 	        rrddslist = Rrdfiles.objects.filter(rootdir__name__regex=regtextarr[0]).filter(subpath__regex=regtextarr[1]).filter(ds__regex=regtextarr[2])
 		i = 0
 
+		#color cycle for template item
 		colors = []
 		colorset = GraphItems.COLORS
 		for x in colorset:
@@ -160,7 +157,6 @@ def drawgraph(req, graphid):
 			subpath = rrdds.subpath
 			rrdds = rrdds.ds
 			filename = rootdir + subpath
-			#filename = rootdir + '/' + subpath
 			rra = gobject.rra
 			linetype = gobject.linetype.upper()
 			mycolor = colors[i % len(colors)][0]
@@ -199,16 +195,15 @@ def drawgraph(req, graphid):
 	colsch = GraphColorScheme.objects.get(pk=cs)
    	ca = ColorAttributes()
    	ca.back = colsch.cback + colsch.tback
-   	ca.canvas = '#333333'
-   	ca.shadea = '#000000'
-   	ca.shadeb = '#111111'
-   	ca.mgrid = '#CCCCCC'
-   	ca.axis = '#FFFFFF'
-   	ca.frame = '#AAAAAA'
- 	ca.font = '#FFFFFF'
-	ca.arrow = '#FFFFFF'
-
-	#make a pyrrd Graph object to add our data to, destination standard out (-)
+   	ca.canvas = colsch.cback + colsch.tcanvas
+   	ca.shadea = colsch.cback + colsch.tshadea
+   	ca.shadeb = colsch.cback + colsch.tshadeb
+   	ca.mgrid = colsch.cmgrid + colsch.tmgrid
+   	ca.axis = colsch.caxis + colsch.taxis
+   	ca.frame = colsch.cframe + colsch.tframe
+   	ca.font = colsch.cfont + colsch.tfont
+   	ca.arrow = colsch.carrow + colsch.tarrow
+	#make a pyrrd Graph object, destination standard out (-)
 	g = Graph('-', imgformat='png', start=start, end=end, color=ca, vertical_label='"'+ginfo.name+'"')
 	#populate it with our url params, defaulting to Dgraph instance (ginfo) options
 	fullsizemode = req.GET.get('fullsizemode')
@@ -243,8 +238,8 @@ def drawgraph(req, graphid):
 def dash(req, dashid):
 	now = int(time.time())
 	dashobj = Dash.objects.get(pk=dashid)
-	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'type', 'widthratio', 'heightratio', 'seq', 'timelagratio', 'alttext').order_by('seq')
-	
+	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'type', 'widthratio', 'heightratio', 'seq', 'timelagratio', 'alttext').order_by('seq')	
+
 	#handle time shorthand
 	secondsago = secsago(req)
 	if secondsago <= 0:
@@ -264,8 +259,10 @@ def dash(req, dashid):
 	'desc' : req.GET.get('desc', dashobj.description),
 	'forcecolor' : req.GET.get('forcecolor', dashobj.forcecolor),
 	'cs' : req.GET.get('cs', dashobj.gcolorscheme),
+	'serialized_layout' : req.GET.get('cl', dashobj.serialized_layout),
 	}
-	return render_to_response('pydrraw/dash.html', {'dobjects': dobjects, 'dinfo': dinfo })
+	csobj = GraphColorScheme.objects.get(pk=dinfo['cs'])
+	return render_to_response('pydrraw/dash.html', {'dobjects': dobjects, 'dinfo': dinfo, 'csobj': csobj })
 
 
 
@@ -287,15 +284,18 @@ def drawsimplegraph(req, rrdpathname, rrd, ds, rra, height=600, width=1200, star
 		gitems.append(CDEF(vname='kmh', rpn='%s' % gitems[0].vname))
 		gitems.append(AREA(defObj=gitems[1], color='#006600', legend=rrd+" "+str(start)+" "+str(end)))
 		g = Graph('-', imgformat='png', start=str(start), end=str(end), vertical_label=ds)
-		g.title = rrd
-		g.height = req.GET.get('height')
-		g.width = req.GET.get('width')
+		g.title = rrd + '/' +  ds + '/' + rra
+		g.full_size_mode = True
+		g.only_graph = req.GET.get('onlygraph', False)
+		g.no_legend = req.GET.get('nolegend', True)
+		g.height = req.GET.get('height', 600)
+		g.width = req.GET.get('width', 1200)
 		g.data.extend(gitems)
 		a = g.write()
     		return HttpResponse(a,content_type="image/png")
     		#return HttpResponse(dir(g),content_type="text/plain")
 
-GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=1)
+
 
 class EditGraphItemForm(ModelForm):
 	class Meta:
@@ -323,22 +323,26 @@ def editgraph(req, graphid=None):
         form = EditGraphForm(req.POST, instance=ginfo)
 	#formset = GraphItemFormSet(instance=ginfo)
         if form.is_valid(): 
-	    g_form = form.save(commit=False)
-	    gi_formset = GraphItemFormSet(req.POST, instance=g_form)
-       	    if gi_formset.is_valid(): 
-	    	g_form.save()
-		gi_formset.save()
+	    gobject = form.save()
+    	    GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=1)
+	    formset = GraphItemFormSet(req.POST, instance=gobject)
+       	    if formset.is_valid(): 
+		formset.instance = gobject
+		formset.save()
+		transaction.commit()
 		status = 'Saved!'
-		#return HttpResponseRedirect(reverse('posted'))
+		return HttpResponseRedirect('')
 	    else:
 		status = 'Formset failed to validate!'
 	else:
 	    status = 'Form failed to validate!'
     else:
         form = EditGraphForm(instance=ginfo)
-	gi_formset = GraphItemFormSet(instance=Dgraph())
+    	GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=1)
+	#formset = GraphItemFormSet(instance=Dgraph(graphid))
+	formset = GraphItemFormSet(instance=ginfo)
 	status = 'Unsaved'
 
-    return render_to_response('pydrraw/editgraph.html', {'form': form, 'gi_formset': gi_formset, 'graphid':graphid, 'status':status, }, context_instance=RequestContext(req))
+    return render_to_response('pydrraw/editgraph.html', {'form': form, 'formset': formset, 'graphid':graphid, 'status':status, }, context_instance=RequestContext(req))
 
 

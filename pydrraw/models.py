@@ -4,6 +4,19 @@ from django.utils import timezone
 from smart_selects.db_fields import GroupedForeignKey
 from pyrrd.rrd import RRD
 
+class GraphItemColorCycle(models.Model):
+	name = models.CharField(max_length=20, primary_key=True)
+    	def __unicode__(self): 
+		return self.name
+
+class GraphItemColorCycleColor(models.Model):
+	name = models.ForeignKey(GraphItemColorCycle)
+	color = models.CharField(max_length=6, default='FFFFFF')
+	transparency = models.CharField(max_length=2, default='FF')
+	seq = models.IntegerField(max_length=20, blank=True)
+    	def __unicode__(self): 
+		return self.color
+
 class GraphColorScheme(models.Model):
 	COLORS = {
 	('#000066','SkyBlue'),
@@ -155,6 +168,7 @@ class Dgraph(models.Model):
     showdate_end = models.BooleanField(default=False)
     showdate_now = models.BooleanField(default=False)
     pub_date = models.DateTimeField('date published')
+    gcolorscheme = models.ForeignKey(GraphColorScheme, default='default')
     def __unicode__(self):  # Python 3: def __str__(self):
         return self.name
     def was_published_recently(self):

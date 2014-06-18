@@ -33,15 +33,19 @@ class AdminImageWidget(AdminFileWidget):
         output.append(super(AdminFileWidget, self).render(name, value, attrs))
         return mark_safe(u''.join(output))
 
+class GraphItemColorCycleColorChoice(admin.TabularInline):
+	model = GraphItemColorCycleColor
+	extra = 2
+
+class GraphItemColorCycleAdmin(admin.ModelAdmin):
+	inlines = [GraphItemColorCycleColorChoice]
+
 class GraphItemsForm(forms.ModelForm):
 	class Meta:
 		model = GraphItems
-#		exclude = ['option_text']
 
 class GraphItemsChoice(admin.TabularInline):
-#	fields = ['graph', 'option_type', 'option_text']
 	model = GraphItems
-#	formset = GraphItemsAdminFormset
 	extra = 2
 	form = GraphItemsForm
 
@@ -78,3 +82,4 @@ admin.site.register(Rrdpaths, RrdPathsAdmin)
 admin.site.register(DashLayouts)
 admin.site.register(Dash, DashAdmin)
 admin.site.register(GraphColorScheme)
+admin.site.register(GraphItemColorCycle, GraphItemColorCycleAdmin)
