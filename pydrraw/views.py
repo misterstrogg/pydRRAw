@@ -13,7 +13,7 @@ from pydrraw.models import *
 from django.views import generic
 import time
 from sets import Set
-from django.forms import ModelForm
+from django.forms import ModelForm, TextInput
 from django.forms.models import inlineformset_factory
 from django.db import transaction
 
@@ -110,7 +110,6 @@ def drawgraph(req, graphid):
 	ginfo = Dgraph.objects.get(pk=graphid)
 	gobjects = GraphItems.objects.filter(graph__id=graphid).order_by('seq')
 	gitems = []
-
 	secondsago = secsago(req)
 	if secondsago == 0:
 		secondsago = 3600
@@ -133,7 +132,7 @@ def drawgraph(req, graphid):
                 gitems.append(DEF(rrdfile=filename, vname='d'+namesuff, dsName=rrdds))
 		gitems.append(CDEF(vname='c'+namesuff, rpn='%s' % 'd'+namesuff))
 		linetype = gobject.linetype.upper()
-		mycolor = gobject.color + gobject.transparency
+		mycolor = '#' + gobject.color + gobject.transparency
 		if linetype == 'A':
 			gitems.append(AREA(value='c'+namesuff, color=mycolor, legend=legendtext, stack=gobject.stack))
 		elif linetype[:1] == 'L':
@@ -191,7 +190,7 @@ def drawgraph(req, graphid):
 
 	    if gobject.itemtype == 'V': #Handle Custom VDEFs
 		pass
-	cs = req.GET.get('cs', 'default')
+	cs = req.GET.get('cs', ginfo.gcolorscheme)
 	colsch = GraphColorScheme.objects.get(pk=cs)
    	ca = ColorAttributes()
    	ca.back = colsch.cback + colsch.tback
@@ -234,8 +233,7 @@ def drawgraph(req, graphid):
 	#minetype = gobject.linetype.value.upper() #just a thing to cause an error and debug
     	return HttpResponse(a,mimetype="image/png")
 #  return HttpResponse("failed to retrieve graph objects",mimetype="text/plain")
-
-def dash(req, dashid):
+def dash2(req, dashid):
 	now = int(time.time())
 	dashobj = Dash.objects.get(pk=dashid)
 	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'type', 'widthratio', 'heightratio', 'seq', 'timelagratio', 'alttext').order_by('seq')	
@@ -262,9 +260,37 @@ def dash(req, dashid):
 	'serialized_layout' : req.GET.get('cl', dashobj.serialized_layout),
 	}
 	csobj = GraphColorScheme.objects.get(pk=dinfo['cs'])
+	return render_to_response('pydrraw/dash2.html', {'dobjects': dobjects, 'dinfo': dinfo, 'csobj': csobj })
+
+def dash(req, dashid):
+	now = int(time.time())
+	dashobj = Dash.objects.get(pk=dashid)
+	dobjects = DashItems.objects.filter(dashboard__id=dashid).values('graphid', 'type', 'widthratio', 'heightratio', 'seq', 'timelagratio', 'graphurl', 'alttext').order_by('seq')	
+
+	#handle time shorthand
+	secondsago = secsago(req)
+	if secondsago <= 0:
+		secondsago = dashobj.timespan
+	end = int(req.GET.get('end', now))
+	start = int(req.GET.get('start', end - secondsago))
+	dinfo = {
+	'id' : dashobj.id,
+	'start' : start,
+	'end' : end,
+	#get rest of info from dash object, allow url override
+	'width' : req.GET.get('width', dashobj.width),
+	'height' : req.GET.get('height', dashobj.height),
+	'nolegend' : req.GET.get('nolegend', dashobj.nolegend),
+	'graphonly' : req.GET.get('graphonly', dashobj.graphonly),
+	'columns' : req.GET.get('columns', dashobj.columns),
+	'title' : req.GET.get('title', dashobj.name),
+	'desc' : req.GET.get('desc', dashobj.description),
+	'forcecolor' : req.GET.get('forcecolor', dashobj.forcecolor),
+	'cs' : req.GET.get('cs', dashobj.gcolorscheme),
+	'serialized_layout' : req.GET.get('cl', dashobj.serialized_layout),
+	}
+	csobj = GraphColorScheme.objects.get(pk=dinfo['cs'])
 	return render_to_response('pydrraw/dash.html', {'dobjects': dobjects, 'dinfo': dinfo, 'csobj': csobj })
-
-
 
 def drawsimplegraph(req, rrdpathname, rrd, ds, rra, height=600, width=1200, start='default', end='default' ):
 	filename = Rrdpaths.objects.get(name=str(rrdpathname)).path 
@@ -293,14 +319,12 @@ def drawsimplegraph(req, rrdpathname, rrd, ds, rra, height=600, width=1200, star
 		g.data.extend(gitems)
 		a = g.write()
     		return HttpResponse(a,content_type="image/png")
-    		#return HttpResponse(dir(g),content_type="text/plain")
-
-
 
 class EditGraphItemForm(ModelForm):
 	class Meta:
 		model = GraphItems
 		fields = '__all__'
+
 	
 class EditGraphForm(ModelForm):
 	class Meta:
@@ -313,12 +337,10 @@ def addgraph(req, graphid):
 	
 
 def editgraph(req, graphid=None):
-
     if graphid:
 		ginfo = get_object_or_404(Dgraph, pk=graphid)
     else:
 		ginfo = Dgraph()
-
     if req.method == 'POST': 
         form = EditGraphForm(req.POST, instance=ginfo)
 	#formset = GraphItemFormSet(instance=ginfo)
@@ -338,11 +360,10 @@ def editgraph(req, graphid=None):
 	    status = 'Form failed to validate!'
     else:
         form = EditGraphForm(instance=ginfo)
-    	GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=1)
+    	GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=2, widgets={'color': TextInput(attrs={'class':'color'})})
 	#formset = GraphItemFormSet(instance=Dgraph(graphid))
 	formset = GraphItemFormSet(instance=ginfo)
 	status = 'Unsaved'
-
     return render_to_response('pydrraw/editgraph.html', {'form': form, 'formset': formset, 'graphid':graphid, 'status':status, }, context_instance=RequestContext(req))
 
 

@@ -3,6 +3,7 @@ from django.contrib import admin
 #from django.forms.models import BaseInlineFormSet
 #from pydrraw.models import Dgraph, GraphItems, Rrdpaths, Rrdfiles, Dash, DashItems, DashLayouts, GraphColorScheme
 from pydrraw.models import *
+from string import Template
 
 #class GraphItemsAdminFormset():
 #	def add_fields(self, form, index):
@@ -36,22 +37,63 @@ class AdminImageWidget(AdminFileWidget):
 class GraphItemColorCycleColorChoice(admin.TabularInline):
 	model = GraphItemColorCycleColor
 	extra = 2
+	class Media:
+		js = ('/static/pydrraw/js/jscolor/jscolor.js', )
+	def formfield_for_dbfield(self, db_field, **kwargs):
+	    if "color" in db_field.name:
+		attrs = { 'class': 'color' }
+	    	kwargs['widget'] = forms.TextInput(attrs=attrs)
+	    return super(GraphItemColorCycleColorChoice,self).formfield_for_dbfield(db_field,**kwargs)
+
+
 
 class GraphItemColorCycleAdmin(admin.ModelAdmin):
 	inlines = [GraphItemColorCycleColorChoice]
 
 class GraphItemsForm(forms.ModelForm):
 	class Meta:
-		model = GraphItems
+	    model = GraphItems
+
 
 class GraphItemsChoice(admin.TabularInline):
 	model = GraphItems
-	extra = 2
-	form = GraphItemsForm
+	extra = 0
+	class Media:
+		js = ('/static/pydrraw/js/jscolor/jscolor.js', 
+		'/static/pydrraw/js/jquery-1.7.2.min.js',
+		'/static/pydrraw/js/jquery.multiselect.filter.min.js', )
+	def formfield_for_dbfield(self, db_field, **kwargs):
+	    if "color" in db_field.name:
+		attrs = { 'class': 'color' }
+	    	kwargs['widget'] = forms.TextInput(attrs=attrs)
+	    if db_field.name == 'alttext':
+		attrs = { 'class': 'color' }
+	    	kwargs['widget'] = forms.TextArea(attrs=attrs)
+	    return super(GraphItemsChoice,self).formfield_for_dbfield(db_field,**kwargs)
+
+class ColorWidget(forms.TextInput):
+	class Media:
+		js = ('/static/pydrraw/js/jscolor/jscolor.js', )
 
 class DgraphAdmin(admin.ModelAdmin):
 	inlines = [GraphItemsChoice]
-	#fields = ['pub_date', 'name']
+	#readonly_fields=['preview',]
+	fieldsets = (
+        	(None, {
+        	    'fields': ('name', 'vertical_label', 'gcolorscheme',)
+        	}),
+        	('Advanced options', {
+        	    'classes': ('collapse',),
+        	    'fields': ('graph_options','upper_limit','lower_limit','rigid_boundaries','logarithmic','only_graph','alt_autoscale','alt_autoscale_max','no_gridfit','x_grid','y_grid','alt_y_grid','units_exponent','zoom','font','font_render_mode','no_legend','force_rules_legend','tabwidth','base','slope_mode','backend','showdate_start','showdate_end','showdate_now','pub_date',)
+        	}),
+	)
+	class Media:
+		js = ('/static/pydrraw/js/jscolor/jscolor.js', )
+	def formfield_for_dbfield(self, db_field, **kwargs):
+	    if db_field.name == 'color':
+		attrs = { 'class': 'color' }
+	    	kwargs['widget'] = forms.TextInput(attrs=attrs)
+	    return super(DgraphAdmin,self).formfield_for_dbfield(db_field,**kwargs)
 
 class RrdfilesChoice(admin.TabularInline):
 	model = Rrdfiles
@@ -66,15 +108,34 @@ class DashItemsChoice(admin.TabularInline):
 	model = DashItems
 	list_per_page = 10
 	extra = 0
-
-#class DashTablesChoice(admin.TabularInline):
-#	model = DashTables
-#	inlines = [DashItemsChoice]
-#	list_per_page = 10
-#	extra = 0
+	def formfield_for_dbfield(self, db_field, **kwargs):
+	    if "color" in db_field.name:
+	    	kwargs['widget'] = forms.TextInput({ 'class': 'color' })
+	    if db_field.name == 'graphurl':
+	    	kwargs['widget'] = forms.Textarea(attrs={'rows':2, 'cols':50})
+	    if db_field.name == 'alttext':
+	    	kwargs['widget'] = forms.Textarea(attrs={'rows':2, 'cols':20})
+	    return super(DashItemsChoice,self).formfield_for_dbfield(db_field,**kwargs)
 
 class DashAdmin(admin.ModelAdmin):
-    inlines = [DashItemsChoice]
+    fieldsets = (
+        	(None, {
+        	    'fields': ('name', 'description', 'timespan', 'columns', 'gcolorscheme',)
+        	}),
+        	('Advanced options', {
+        	    'classes': ('collapse',),
+        	    'fields': ('width', 'height', 'hmargin', 'vmargin', 'nolegend', 'graphonly', 'forcecolor', 'serialized_layout')
+        	}),
+	)
+    inlines = [DashItemsChoice]	
+    def formfield_for_dbfield(self, db_field, **kwargs):
+	    if db_field.name == 'serialized_layout':
+	    	kwargs['widget'] = forms.Textarea(attrs={'cols':50})
+	    if db_field.name == 'description':
+	    	kwargs['widget'] = forms.Textarea(attrs={'cols':50, 'rows':4})
+	    return super(DashAdmin,self).formfield_for_dbfield(db_field,**kwargs)
+
+
 	
 # Register your models here.
 admin.site.register(Dgraph, DgraphAdmin)

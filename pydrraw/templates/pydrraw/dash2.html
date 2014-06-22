@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static from staticfiles %}
+
+<head>
+{% block xhead %}
+            <!-- Javascreeeeepts -->
+	<link rel="stylesheet" href="{% static '/static/pydrraw/css/gridlist.css' %}"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+            <script src="{% static '/static/pydrraw/js/gridList.js' %}"></script>
+  	    <script src="{% static '/static/pydrraw/js/jquery.gridList.js' %}"></script>
+
+{% endblock %}
+{% load mathfilters %}
+</head>
+
+{% block content %}
+ <div class="header">
+    <a href="#remove-row" class="button remove-row">-</a>
+    <a href="#add-row" class="button add-row">+</a>
+ </div>
+  <div class="grid-container">
+	<ul id='grid' class='grid'>
+     <li class="position-highlight">
+        <div class="inner"></div>
+      </li>
+    {% for dobject in dobjects %}
+      {% if dobject.type == 'S' %} 
+	{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
+        <li id="{{ forloop.counter }}" data-y='1' data-x='1' data-alttext='{{ graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-w="{{ dobject.widthratio }}" data-h="{{ dobject.heightratio }}"><div class="inner"><div class="controls"><a href="#zoom1" class="resize" data-size="1">1x</a><a href="#zoom2" class="resize" data-size="2">2x</a><a href="#zoom3" class="resize" data-size="3">3x</a></div></div></li>
+      {% else %}
+        <li id="{{ forloop.counter }}" data-y='1' data-x='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-w="{{ dobject.widthratio }}" data-h="{{ dobject.heightratio }}"><div class="inner"><div class="controls"><a href="#zoom1" class="resize" data-size="1">1x</a><a href="#zoom2" class="resize" data-size="2">2x</a><a href="#zoom3" class="reheight" data-size="3">3x</a></div></div></li>
+      {% endif %}
+    {% empty %}
+	<li> No Dash Items Found </li>
+    {% endfor %}
+	  </ul>
+</div>
+
+
+<H2>{{ dinfo.title }}:{{ dinfo.desc }}</H2>
+
+{% endblock %}
+{% block script %}
+  	    <script src="{% static '/static/pydrraw/js/pygridlist.js' %}"></script>
+{% endblock %}

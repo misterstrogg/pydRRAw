@@ -1,16 +1,25 @@
-{% extends "base.html" %}
-{% block content %}
-{% load mathfilters %}
+{% extends "base2.html" %}
+{% load static from staticfiles %}
 
+<head>
+{% block xhead %}
+            <!-- Javascreeeeepts -->
+            <script src="{% static "/static/pydrraw/js/jquery-1.7.2.min.js" %}"></script>
+            <script src="{% static "/static/pydrraw/gridster.js/dist/jquery.gridster.min.js" %}"></script>
+{% endblock %}
+{% load mathfilters %}
+</head>
+
+{% block content %}
 <section class="demo">
   <div class="gridster">
 	<ul>
     {% for dobject in dobjects %}
       {% if dobject.type == 'S' %} 
 	{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
+        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-graphurl='{{ graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
       {% else %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
+        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-graphurl='{{ dobject.graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
       {% endif %}
     {% empty %}
 	<li> No Dash Items Found </li>
@@ -18,13 +27,22 @@
 	  </ul></div>
 
 
-<H2>{{ dinfo.title }}:{{ dinfo.desc }}</H2>
+{% url 'pydrraw:dash' dinfo.id as dashurl %}
+<H2>{{ dinfo.title|safe }}</H2>
+<H4>{{ dinfo.desc|safe }}
+<a href="{{ dashurl }}?days=3">Three days (was the morning)</a>
+<a href="{{ dashurl }}?cs=dark">Dark Theme</a>
+<a href="{{ dashurl }}?hours=12&height=200&graphonly=1">BWAAA</a></H4>
 </section>
-
+{% endblock %}
+{% block xfooter %}
+{{dinfo.end}}
 {% endblock %}
 {% block script %}
 <script type="text/javascript">
 $(window).ready(function () {
+	var endinms = new Date() / 1000;
+	var nownow = Math.floor(endinms);
 	var localData;
 	localData = JSON.parse(localStorage.getItem('griddata'));
 	var serverlayout={{ dinfo.serialized_layout|safe }};
@@ -32,20 +50,22 @@ $(window).ready(function () {
 		//localData=JSON.parse(serverlayout);
 		localData=serverlayout;
 	}
-//	}
+
 	if(localData!=null) {
 		$.each(localData, function(i,value){
     			var id_name;
 			id_name="#";
 			id_name = id_name + value.id;
+		    if (typeof $(id_name)[0] == 'undefined') {	
+		    } else {
 			$(id_name).attr({"data-col":value.col, "data-row":value.row, "data-sizex":value.size_x, "data-sizey":value.size_y});
 			newwidth =  {{ dinfo.width }} * ($(id_name)[0].dataset.sizex);
 			newheight =  {{ dinfo.height }} * ($(id_name)[0].dataset.sizey);
 			newstart = parseInt(({{ dinfo.end }} - {{ dinfo.start }}) * 
-			   ($(id_name)[0].dataset.timelagratio) * (-1) + {{ dinfo.end }}); 
+			   ($(id_name)[0].dataset.timelagratio) * (-1) + nownow); 
 			var fc = '{{ dinfo.forcecolor }}';
 			if ($(id_name)[0].dataset.gtype == 'S') {
-			rawgraphurl = $(id_name)[0].dataset.alttext + '?' 
+			rawgraphurl = $(id_name)[0].dataset.graphurl + '?' 
 			timeurlappend = '&start=' + newstart + '&end=' + {{ dinfo.end }};
 			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
 			styleurlappend = '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
@@ -53,7 +73,7 @@ $(window).ready(function () {
 				styleurlappend+='&cs={{ dinfo.cs }}';
 			  }
 			} else {
-			rawgraphurl = $(id_name)[0].dataset.alttext 
+			rawgraphurl = $(id_name)[0].dataset.graphurl 
 			timeurlappend = '&from=' + newstart + '&until=' + {{ dinfo.end }};
 			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
 			styleurlappend = '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
@@ -67,8 +87,7 @@ $(window).ready(function () {
 			imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
 			linkurl = rawgraphurl + timeurlappend + '&height=' + $(window).height() + '&width=' + $(window).width();;
 			$(id_name)[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "'><span class='gs-resize-handle gs-resize-handle-both'></span> ";
-			//$(id_name)[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";
-
+		    }
 		});
 	} else {
 		console.log('No data returned by the server: ' + localData);	
@@ -76,7 +95,6 @@ $(window).ready(function () {
 	}
 });
 $(function () { //DOM Ready
-
     $(".gridster ul").gridster({
         widget_margins: [2, 2],
         widget_base_dimensions: [({{ dinfo.width }} - 2), ({{ dinfo.height }} - 2)],
@@ -93,7 +111,7 @@ $(function () { //DOM Ready
 		console.log(this);
 			var fc = '{{ dinfo.forcecolor }}';
 		if (this.$resized_widget[0].dataset.gtype == 'S') {
-			rawgraphurl = this.$resized_widget[0].dataset.alttext + '?';
+			rawgraphurl = this.$resized_widget[0].dataset.graphurl + '?';
 			timeurlappend = '&start=' + newstart + '&end=' + {{ dinfo.end }};
 			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
 			styleurlappend = '&nolegend=1&fullsizemode=1&graphonly={{ dinfo.graphonly }}';
@@ -101,7 +119,7 @@ $(function () { //DOM Ready
 				styleurlappend+='&cs={{ dinfo.cs }}';
 			  }
 		} else {
-			rawgraphurl = this.$resized_widget[0].dataset.alttext;
+			rawgraphurl = this.$resized_widget[0].dataset.graphurl;
 			timeurlappend = '&from=' + newstart + '&until=' + {{ dinfo.end }};
 			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
 			styleurlappend = '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
@@ -114,7 +132,6 @@ $(function () { //DOM Ready
 		imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
 		linkurl = rawgraphurl + '&height=' + $(window).height() + '&width=' + $(window).width() + timeurlappend;
 		this.$resized_widget[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "'><span class='gs-resize-handle gs-resize-handle-both'></span> ";
-			//$(id_name)[0].innerHTML = "<img src=\"" + newgraphurl +  "\"/><span class='gs-resize-handle gs-resize-handle-both'></span> ";
    		var gridData = JSON.stringify(gridstervar.serialize());
 		console.log(gridData);
 		localStorage.setItem('griddata', gridData);

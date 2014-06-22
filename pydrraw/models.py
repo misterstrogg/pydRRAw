@@ -154,7 +154,7 @@ class Dgraph(models.Model):
     y_grid = models.BooleanField(default=False)
     alt_y_grid = models.BooleanField(default=False)
     units_exponent = models.BooleanField(default=False)
-    color = models.CharField(max_length=200, blank=True, choices=COLORS)
+    color = models.CharField(max_length=200, default='#FFFFFF')
     zoom = models.BooleanField(default=False)
     font = models.CharField(max_length=200, blank=True)
     font_render_mode = models.CharField(max_length=200, blank=True)
@@ -224,16 +224,11 @@ class GraphItems(models.Model):
 	rrdds = models.ForeignKey(Rrdfiles)
         linetype = models.CharField(max_length=7, choices=LINEOPTIONS)
 	stack = models.BooleanField(default=1)
-        color = models.CharField(max_length=7, choices=COLORS)
+        color = models.CharField(max_length=7, default='000000')
         transparency = models.CharField(max_length=2, default='FF')
         rra = models.CharField(max_length=7, choices=RRAS)
-        #seq = models.IntegerField(max_length=2)
         option_text = models.CharField(max_length=200, blank=True)
-	#ds = models.CharField(max_length=200)
 	seq = models.IntegerField(max_length=20, null=True)
-
-#        def __unicode__(self):  # Python 3: def __str__(self):
-#                return self.
 
 class Dash(models.Model):
 	RATIOS = {
@@ -292,8 +287,9 @@ class DashItems(models.Model):
 	(5, '5'),
 	}
 	type = models.CharField(max_length=20, choices=TYPES, default='S')
+	graphurl = models.URLField(max_length=1000, blank=True)
 	alttext = models.CharField(max_length=1000, blank=True)
-	graphid = models.ForeignKey(Dgraph)
+	graphid = models.ForeignKey(Dgraph, null=True, blank=True)
 	seq = models.IntegerField(max_length=20, null=True)
 	widthratio = models.IntegerField(choices=RATIOS, default=1)
 	heightratio = models.IntegerField(choices=RATIOS, default=1)
