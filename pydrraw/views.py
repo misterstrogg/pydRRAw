@@ -224,7 +224,7 @@ def drawgraph(req, graphid):
 		g.logarithmic = False
 	else:
 		g.logarithmic = getattr(ginfo, 'logarithmic', False)
-
+	g.disable_rrdtool_tags = True
 	g.height = req.GET.get('height', 600)
 	g.width = req.GET.get('width', 1200)
 	g.title = '"'+ginfo.name+'"' 
@@ -280,6 +280,8 @@ def dash(req, dashid):
 	#get rest of info from dash object, allow url override
 	'width' : req.GET.get('width', dashobj.width),
 	'height' : req.GET.get('height', dashobj.height),
+	'hmargin' : req.GET.get('width', dashobj.hmargin),
+	'vmargin' : req.GET.get('height', dashobj.vmargin),
 	'nolegend' : req.GET.get('nolegend', dashobj.nolegend),
 	'graphonly' : req.GET.get('graphonly', dashobj.graphonly),
 	'columns' : req.GET.get('columns', dashobj.columns),

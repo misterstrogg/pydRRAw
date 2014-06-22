@@ -95,7 +95,9 @@ STATIC_URL = '/static/'
 
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 STATIC_ROOT = os.path.join(PROJECT_PATH, 'static')
-
+TEMPLATE_DIRS = (
+   os.path.join(PROJECT_PATH, 'templates'),
+)
 #CACHES = {
 #    'default': {
 #        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',

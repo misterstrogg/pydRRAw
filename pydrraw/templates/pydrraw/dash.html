@@ -44,13 +44,11 @@ $(window).ready(function () {
 	var endinms = new Date() / 1000;
 	var nownow = Math.floor(endinms);
 	var localData;
-	localData = JSON.parse(localStorage.getItem('griddata'));
-	var serverlayout={{ dinfo.serialized_layout|safe }};
+	localData = JSON.parse(localStorage.getItem('dash' + {{ dinfo.id }}));
+	var serverlayout={{ dinfo.serialized_layout|safe|default:'[{"id":"1","col":1,"row":1,"size_x":2,"size_y":2},{"id":"2","col":2,"row":1,"size_x":2,"size_y":2}]'}};
 	if(localData==null)  {
-		//localData=JSON.parse(serverlayout);
 		localData=serverlayout;
 	}
-
 	if(localData!=null) {
 		$.each(localData, function(i,value){
     			var id_name;
@@ -59,8 +57,8 @@ $(window).ready(function () {
 		    if (typeof $(id_name)[0] == 'undefined') {	
 		    } else {
 			$(id_name).attr({"data-col":value.col, "data-row":value.row, "data-sizex":value.size_x, "data-sizey":value.size_y});
-			newwidth =  {{ dinfo.width }} * ($(id_name)[0].dataset.sizex);
-			newheight =  {{ dinfo.height }} * ($(id_name)[0].dataset.sizey);
+			newwidth =  parseInt(({{dinfo.width}} + 2 * {{ dinfo.hmargin }}) * ($(id_name)[0].dataset.sizex) - (2 * {{ dinfo.hmargin }}));
+			newheight =  parseInt(({{dinfo.height}} + 2 * {{ dinfo.vmargin }}) * ($(id_name)[0].dataset.sizey) - (2 * {{ dinfo.vmargin }}));
 			newstart = parseInt(({{ dinfo.end }} - {{ dinfo.start }}) * 
 			   ($(id_name)[0].dataset.timelagratio) * (-1) + nownow); 
 			var fc = '{{ dinfo.forcecolor }}';
@@ -96,8 +94,8 @@ $(window).ready(function () {
 });
 $(function () { //DOM Ready
     $(".gridster ul").gridster({
-        widget_margins: [2, 2],
-        widget_base_dimensions: [({{ dinfo.width }} - 2), ({{ dinfo.height }} - 2)],
+        widget_margins: [{{dinfo.hmargin}}, {{dinfo.vmargin}}],
+        widget_base_dimensions: [({{ dinfo.width }}), ({{ dinfo.height }})],
 	max_columns: {{ dinfo.columns }},
 	helper: 'clone',
 	avoid_overlapped_widgets: true,
@@ -105,8 +103,8 @@ $(function () { //DOM Ready
 	   enabled: true,
 	   stop: function(event, ui) {
 		elid = this.$el.context.lastElementChild.id;
-		newwidth =  parseInt(this.resize_initial_width, 10) / parseInt(this.resize_initial_sizex, 10) * parseInt(this.resize_last_sizex, 10);
-		newheight =  parseInt(this.resize_initial_height, 10) / parseInt(this.resize_initial_sizey, 10) * parseInt(this.resize_last_sizey, 10);
+		newheight =  parseInt((this.min_widget_height * this.resize_last_sizey), 10) - (2 * {{ dinfo.vmargin }} );
+		newwidth =  parseInt((this.min_widget_width * this.resize_last_sizex), 10) - (2 * {{ dinfo.hmargin }});
 		newstart = parseInt(({{ dinfo.end }} - {{ dinfo.start }}) * (this.$resized_widget[0].dataset.timelagratio) * (-1) + {{ dinfo.end }}); //weird math is just to mirror fuxor mathfilters math above
 		console.log(this);
 			var fc = '{{ dinfo.forcecolor }}';
@@ -134,7 +132,7 @@ $(function () { //DOM Ready
 		this.$resized_widget[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "'><span class='gs-resize-handle gs-resize-handle-both'></span> ";
    		var gridData = JSON.stringify(gridstervar.serialize());
 		console.log(gridData);
-		localStorage.setItem('griddata', gridData);
+		localStorage.setItem('dash' + {{ dinfo.id }}, gridData);
 	   },
 	},
 	serialize_params: function($w, wgd) { 
@@ -150,7 +148,7 @@ $(function () { //DOM Ready
 			stop: function(event, ui) {
 	        		var gridData = JSON.stringify(gridstervar.serialize());
 				console.log(gridData);
-				localStorage.setItem('griddata', gridData);
+				localStorage.setItem('dash' + {{ dinfo.id }}, gridData);
 			},
 	},
     })
