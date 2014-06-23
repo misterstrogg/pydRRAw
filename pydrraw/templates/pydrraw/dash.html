@@ -18,6 +18,8 @@
       {% if dobject.type == 'S' %} 
 	{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
         <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-graphurl='{{ graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
+      {% elif dobject.type == 'H' %}
+        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}">{{ dobject.alttext|safe }}</li>
       {% else %}
         <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-graphurl='{{ dobject.graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
       {% endif %}
@@ -30,9 +32,10 @@
 {% url 'pydrraw:dash' dinfo.id as dashurl %}
 <H2>{{ dinfo.title|safe }}</H2>
 <H4>{{ dinfo.desc|safe }}
-<a href="{{ dashurl }}?days=3">Three days (was the morning)</a>
+<a href="{{ dashurl }}?days=3">Three days</a>
 <a href="{{ dashurl }}?cs=dark">Dark Theme</a>
-<a href="{{ dashurl }}?hours=12&height=200&graphonly=1">BWAAA</a></H4>
+<a href="{{ dashurl }}?cs=light">Light Theme</a>
+<a href="{{ dashurl }}?hours=12&height=100&width=100&graphonly=1">BWAAA</a></H4>
 </section>
 {% endblock %}
 {% block xfooter %}
@@ -70,7 +73,10 @@ $(window).ready(function () {
 			  if (fc == 'True') {
 				styleurlappend+='&cs={{ dinfo.cs }}';
 			  }
-			} else {
+			imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
+			linkurl = rawgraphurl + timeurlappend + '&height=' + $(window).height() + '&width=' + $(window).width();;
+			$(id_name)[0].innerHTML = "<img src=\"" + imageurl +  "\" height=newheight width=newwidth ondblclick=parent.location='" + linkurl + "'>";
+			} else if ($(id_name)[0].dataset.gtype == 'G' || $(id_name)[0].dataset.gtype == 'I') {
 			rawgraphurl = $(id_name)[0].dataset.graphurl 
 			timeurlappend = '&from=' + newstart + '&until=' + {{ dinfo.end }};
 			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
@@ -81,10 +87,22 @@ $(window).ready(function () {
 				styleurlappend+='&fgcolor=' + '{{ csobj.cfont }}'.substring(1);
 				styleurlappend+='&majorGridLineColor=' + '{{ csobj.cmgrid }}';
 			  }
-			}
 			imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
 			linkurl = rawgraphurl + timeurlappend + '&height=' + $(window).height() + '&width=' + $(window).width();;
-			$(id_name)[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "'><span class='gs-resize-handle gs-resize-handle-both'></span> ";
+			$(id_name)[0].innerHTML = "<img src=\"" + imageurl +  "\" height=newheight width=newwidth ondblclick=parent.location='" + linkurl + "'> ";
+			} else if ($(id_name)[0].dataset.gtype == 'F') {
+			rawgraphurl = $(id_name)[0].dataset.graphurl 
+			  if (fc == 'True') {
+				//apply colors to iframe?
+			  }
+			$(id_name)[0].innerHTML = "<div class='container'><iframe id='myframe' src='"+rawgraphurl+"' height="+newheight+" width="+newwidth+"></iframe></div><span class='gs-resize-handle gs-resize-handle-both'></span> ";
+			} else if ($(id_name)[0].dataset.gtype == 'H') {
+			rawhtml = $(id_name)[0].dataset.alttext
+			  if (fc == 'True') {
+				//apply colors to iframe?
+			  }
+			//$(id_name)[0].innerHTML = $('<div/>').html(rawhtml).text();
+			}
 		    }
 		});
 	} else {
@@ -129,7 +147,7 @@ $(function () { //DOM Ready
 		}
 		imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
 		linkurl = rawgraphurl + '&height=' + $(window).height() + '&width=' + $(window).width() + timeurlappend;
-		this.$resized_widget[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "'><span class='gs-resize-handle gs-resize-handle-both'></span> ";
+		this.$resized_widget[0].innerHTML = "<img src=\"" + imageurl +  "\" ondblclick=parent.location='" + linkurl + "' height=" +newheight+" width="+newwidth+" ><span class='gs-resize-handle gs-resize-handle-both'></span> ";
    		var gridData = JSON.stringify(gridstervar.serialize());
 		console.log(gridData);
 		localStorage.setItem('dash' + {{ dinfo.id }}, gridData);

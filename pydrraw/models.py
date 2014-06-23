@@ -274,9 +274,12 @@ class DashItems(models.Model):
         dashboard = models.ForeignKey(Dash)
 	TYPES = {
 	('B','Table'),
-	('S','Static Pydrraw Graph'),
+	('S','Pydrraw Graph'),
 	('T','Pydrraw Template'),
 	('C','Cacti Image URL'),
+	('I','Generic Image URL'),
+	('F','Generic IFrame URL'),
+	('H','Generic HTML'),
 	('G','Graphite Image URL'),
 	}
 	RATIOS = {
