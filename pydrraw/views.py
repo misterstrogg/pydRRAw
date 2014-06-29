@@ -24,7 +24,7 @@ class GraphDetailView(generic.ListView):
     template_name = 'pydrraw/graphdetail.html'
     context_object_name = 'graph'
     def get_queryset(self):
-        self.graph = get_object_or_404(Dgraph, name="yo")
+        self.graph = get_object_or_404(Rrdgraph, name="yo")
         return GraphItems.objects.filter(graph=self.graph)
     def get_context_data(self, **kwargs):
 	context = super(GraphDetailView, self).get_context_data(**kwargs)
@@ -45,7 +45,7 @@ def list(req, rrdpathname):
 
 
 def infoview(req, rrdpathname, rrd):
-	filename = Rrdpaths.objects.get(name=str(rrdpathname)).path 
+	filename = Rrdpath.objects.get(name=str(rrdpathname)).path 
 	fullfilename = filename + '/' + rrd
 	if os.path.isfile(fullfilename):
 		rrd = RRD(fullfilename, mode='r')
@@ -57,7 +57,7 @@ def infoview(req, rrdpathname, rrd):
     		#return HttpResponse(fullfilename,mimetype="text/plain")
 
 def raw(req, rrdpathname, rrd):
-	filename = Rrdpaths.objects.get(name=str(rrdpathname)).path 
+	filename = Rrdpath.objects.get(name=str(rrdpathname)).path 
 	fullfilename = filename + '/' + rrd
 	if os.path.isfile(fullfilename):
                 myrrd = RRD(fullfilename, mode='r')
@@ -68,7 +68,7 @@ def raw(req, rrdpathname, rrd):
         	return render_to_response('pydrraw/raw.html', {'info': info})
 
 def data(req, rrdpathname, rrd, ds, rra):
-	filename = Rrdpaths.objects.get(name=str(rrdpathname)).path 
+	filename = Rrdpath.objects.get(name=str(rrdpathname)).path 
 	fullfilename = filename + '/' + rrd
 	if os.path.isfile(fullfilename):
                 rrd = RRD(fullfilename, mode='r')
@@ -81,7 +81,7 @@ def data(req, rrdpathname, rrd, ds, rra):
         	return HttpResponse(simplejson.dumps(data))
 
 def oldgraph(req, rrdpathname, rrd):
-	filename = Rrdpaths.objects.get(name=str(rrdpathname)).path 
+	filename = Rrdpath.objects.get(name=str(rrdpathname)).path 
 	fullfilename = filename + '/' + rrd
 	if os.path.isfile(fullfilename):
                 rrdobj = RRD(fullfilename, mode='r')
@@ -107,7 +107,7 @@ def secsago(req):
 
 def drawgraph(req, graphid):
 	now = int(time.time())
-	ginfo = Dgraph.objects.get(pk=graphid)
+	ginfo = Rrdgraph.objects.get(pk=graphid)
 	gobjects = GraphItems.objects.filter(graph__id=graphid).order_by('seq')
 	gitems = []
 	secondsago = secsago(req)
@@ -204,7 +204,7 @@ def drawgraph(req, graphid):
    	ca.arrow = colsch.carrow + colsch.tarrow
 	#make a pyrrd Graph object, destination standard out (-)
 	g = Graph('-', imgformat='png', start=start, end=end, color=ca, vertical_label='"'+ginfo.name+'"')
-	#populate it with our url params, defaulting to Dgraph instance (ginfo) options
+	#populate it with our url params, defaulting to Rrdgraph instance (ginfo) options
 	fullsizemode = req.GET.get('fullsizemode')
 	if (fullsizemode in ['0', 'False' , 'false', 'no', 'No']):
 		g.full_size_mode = False
@@ -295,7 +295,7 @@ def dash(req, dashid):
 	return render_to_response('pydrraw/dash.html', {'dobjects': dobjects, 'dinfo': dinfo, 'csobj': csobj })
 
 def drawsimplegraph(req, rrdpathname, rrd, ds, rra, height=600, width=1200, start='default', end='default' ):
-	filename = Rrdpaths.objects.get(name=str(rrdpathname)).path 
+	filename = Rrdpath.objects.get(name=str(rrdpathname)).path 
 	fullfilename = filename + '/' + rrd
 	if os.path.isfile(fullfilename):
                 rrdobj = RRD(fullfilename, mode='r')
@@ -330,7 +330,7 @@ class EditGraphItemForm(ModelForm):
 	
 class EditGraphForm(ModelForm):
 	class Meta:
-		model = Dgraph
+		model = Rrdgraph
 		fields = '__all__'
 
 def addgraph(req, graphid):
@@ -340,15 +340,15 @@ def addgraph(req, graphid):
 
 def editgraph(req, graphid=None):
     if graphid:
-		ginfo = get_object_or_404(Dgraph, pk=graphid)
+		ginfo = get_object_or_404(Rrdgraph, pk=graphid)
     else:
-		ginfo = Dgraph()
+		ginfo = Rrdgraph()
     if req.method == 'POST': 
         form = EditGraphForm(req.POST, instance=ginfo)
 	#formset = GraphItemFormSet(instance=ginfo)
         if form.is_valid(): 
 	    gobject = form.save()
-    	    GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=1)
+    	    GraphItemFormSet = inlineformset_factory(Rrdgraph, GraphItems, extra=1)
 	    formset = GraphItemFormSet(req.POST, instance=gobject)
        	    if formset.is_valid(): 
 		formset.instance = gobject
@@ -362,8 +362,8 @@ def editgraph(req, graphid=None):
 	    status = 'Form failed to validate!'
     else:
         form = EditGraphForm(instance=ginfo)
-    	GraphItemFormSet = inlineformset_factory(Dgraph, GraphItems, extra=2, widgets={'color': TextInput(attrs={'class':'color'})})
-	#formset = GraphItemFormSet(instance=Dgraph(graphid))
+    	GraphItemFormSet = inlineformset_factory(Rrdgraph, GraphItems, extra=2, widgets={'color': TextInput(attrs={'class':'color'})})
+	#formset = GraphItemFormSet(instance=Rrdgraph(graphid))
 	formset = GraphItemFormSet(instance=ginfo)
 	status = 'Unsaved'
     return render_to_response('pydrraw/editgraph.html', {'form': form, 'formset': formset, 'graphid':graphid, 'status':status, }, context_instance=RequestContext(req))

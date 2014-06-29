@@ -17,15 +17,16 @@
     {% for dobject in dobjects %}
       {% if dobject.type == 'S' %} 
 	{% url 'pydrraw:drawgraph' dobject.graphid as graphurl %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-graphurl='{{ graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
+        <li class='dashitem' id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-graphurl='{{ graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
       {% elif dobject.type == 'H' %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}">{{ dobject.alttext|safe }}</li>
+        <li class='dashitem' id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}">{{ dobject.alttext|safe }}</li>
       {% else %}
-        <li id="{{ forloop.counter }}" data-row='1' data-col='1' data-graphurl='{{ dobject.graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
+        <li class='dashitem' id="{{ forloop.counter }}" data-row='1' data-col='1' data-alttext='{{ dobject.alttext }}' data-graphurl='{{ dobject.graphurl }}' data-gtype='{{ dobject.type }}' data-graphid={{ dobject.graphid }} data-timelagratio={{ dobject.timelagratio }} data-sizex="{{ dobject.widthratio }}" data-sizey="{{ dobject.heightratio }}"></li>
       {% endif %}
     {% empty %}
 	<li> No Dash Items Found </li>
     {% endfor %}
+	<li id="{{ dobjects.count|add:1 }}" data-row="{{ dobjects.count|add:1 }}" data-col=1 data-sizey=1 data-sizex=1 class='textinfo'>{{ dinfo.title|safe }}:{{ dinfo.desc|safe }}</li>
 	  </ul></div>
 
 
@@ -95,7 +96,7 @@ $(window).ready(function () {
 			  if (fc == 'True') {
 				//apply colors to iframe?
 			  }
-			$(id_name)[0].innerHTML = "<div class='container'><iframe id='myframe' src='"+rawgraphurl+"' height="+newheight+" width="+newwidth+"></iframe></div><span class='gs-resize-handle gs-resize-handle-both'></span> ";
+			$(id_name)[0].innerHTML = "<div class='dashitem'><iframe id='myframe' src='"+rawgraphurl+"' height="+newheight+" width="+newwidth+"></iframe></div><span class='gs-resize-handle gs-resize-handle-both'></span> ";
 			} else if ($(id_name)[0].dataset.gtype == 'H') {
 			rawhtml = $(id_name)[0].dataset.alttext
 			  if (fc == 'True') {
@@ -174,6 +175,16 @@ $(function () { //DOM Ready
         gridstervar = $(".gridster ul").gridster( {
 	}).data('gridster');
 });
+
+$('.dashitem').mouseover(function() {
+//		console.log(this.dataset.alttext);
+  $('.textinfo').html(this.dataset.alttext + "<span class='gs-resize-handle gs-resize-handle-both'></span> ");
+});
+
+$('.dashitem').mouseout(function() {
+//  $('.textinfo').css("visibility","hidden");
+});
+
 
 </script>
 {% endblock %}

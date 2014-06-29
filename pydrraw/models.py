@@ -1,8 +1,9 @@
 from django.db import models
-import datetime, os
+import datetime, os, time
 from django.utils import timezone
 from smart_selects.db_fields import GroupedForeignKey
 from pyrrd.rrd import RRD
+from django.core.urlresolvers import reverse
 
 class GraphItemColorCycle(models.Model):
 	name = models.CharField(max_length=20, primary_key=True)
@@ -63,7 +64,7 @@ class GraphColorScheme(models.Model):
 	
 
 
-class Rrdpaths(models.Model):
+class Rrdpath(models.Model):
 	name = models.CharField(max_length=20, primary_key=True)
 	name.unique
 	path = models.CharField(max_length=200)
@@ -107,7 +108,7 @@ class Rrdpaths(models.Model):
 		return mylist
 
 class Rrdfiles(models.Model):
-	rootdir = models.ForeignKey(Rrdpaths)
+	rootdir = models.ForeignKey(Rrdpath)
 	file = models.CharField(max_length=200)
 	subpath = models.CharField(max_length=200)
 	ds = models.CharField(max_length=200, default="value")
@@ -118,7 +119,7 @@ class Rrdfiles(models.Model):
         	return u'%s %s %s' % ((self.rootdir, self.subpath, self.ds))
         	#return (self.subpath)
 
-class Dgraph(models.Model):
+class Rrdgraph(models.Model):
     COLORS = {
 	('#000066','SkyBlue'),
 	('#000000','Black'),
@@ -167,10 +168,18 @@ class Dgraph(models.Model):
     showdate_start = models.BooleanField(default=False)
     showdate_end = models.BooleanField(default=False)
     showdate_now = models.BooleanField(default=False)
-    pub_date = models.DateTimeField('date published')
+    pub_date = models.DateTimeField('last published', auto_now=True)
     gcolorscheme = models.ForeignKey(GraphColorScheme, default='default')
-    def __unicode__(self):  # Python 3: def __str__(self):
+    def __unicode__(self):  # i am but a name
         return self.name
+    def image_tag(self): # get the latest image on first load and by clicking
+	now = int(time.time())
+	imgurl = reverse('pydrraw:drawgraph', kwargs={'graphid':int(self.id)})
+	updateimg = '"this.src=' + "'" + imgurl + "?end='" + ' + (Math.round(new Date().getTime() / 1000))"'
+	imgtag = '<img src="' + imgurl + '" onLoad= ' + updateimg + 'onClick=' + updateimg + ' />'
+	return imgtag
+    image_tag.short_description = 'Image'
+    image_tag.allow_tags = True
     def was_published_recently(self):
         now = timezone.now()
         return now - datetime.timedelta(days=1) <= self.pub_date < now
@@ -179,7 +188,7 @@ class Dgraph(models.Model):
     was_published_recently.short_description = 'Published recently?'
 
 class GraphItems(models.Model):
-        graph = models.ForeignKey(Dgraph)
+        graph = models.ForeignKey(Rrdgraph)
         ITEMOPTIONS = {
         ('S', 'Static'),
         ('R', 'REGEX'),
@@ -190,7 +199,7 @@ class GraphItems(models.Model):
         ('A', 'Area'),
         ('G', 'Gprint'),
         ('L1', 'Line1'),
-        ('L1', 'Line2'),
+        ('L2', 'Line2'),
         ('L3', 'Line3'),
 	}
 	RRAS = {
@@ -221,12 +230,12 @@ class GraphItems(models.Model):
 	}
 
         itemtype = models.CharField(max_length=7, choices=ITEMOPTIONS)
-	rrdds = models.ForeignKey(Rrdfiles)
-        linetype = models.CharField(max_length=7, choices=LINEOPTIONS)
-	stack = models.BooleanField(default=1)
+	rrdds = models.ForeignKey(Rrdfiles, null=True, blank=True)
+        linetype = models.CharField(max_length=7, choices=LINEOPTIONS, default='L1')
+	stack = models.BooleanField(default=False)
         color = models.CharField(max_length=7, default='000000')
         transparency = models.CharField(max_length=2, default='FF')
-        rra = models.CharField(max_length=7, choices=RRAS)
+        rra = models.CharField(max_length=7, choices=RRAS, default='AVERAGE')
         option_text = models.CharField(max_length=200, blank=True)
 	seq = models.IntegerField(max_length=20, null=True)
 
@@ -264,11 +273,11 @@ class Dash(models.Model):
     	def __unicode__(self):  # Python 3: def __str__(self):
         	return self.name
 
-class DashLayouts(models.Model):
-        dashboard = models.OneToOneField(Dash, primary_key=True)
-	serialized_layout = models.CharField(max_length=1000, blank=True)
-    	def __unicode__(self):  # Python 3: def __str__(self):
-        	return "%s" % self.serialized_layout
+#class DashLayouts(models.Model):
+#        dashboard = models.OneToOneField(Dash, primary_key=True)
+#	serialized_layout = models.CharField(max_length=1000, blank=True)
+#    	def __unicode__(self):  # Python 3: def __str__(self):
+#        	return "%s" % self.serialized_layout
 
 class DashItems(models.Model):
         dashboard = models.ForeignKey(Dash)
@@ -292,7 +301,7 @@ class DashItems(models.Model):
 	type = models.CharField(max_length=20, choices=TYPES, default='S')
 	graphurl = models.URLField(max_length=1000, blank=True)
 	alttext = models.CharField(max_length=1000, blank=True)
-	graphid = models.ForeignKey(Dgraph, null=True, blank=True)
+	graphid = models.ForeignKey(Rrdgraph, null=True, blank=True)
 	seq = models.IntegerField(max_length=20, null=True)
 	widthratio = models.IntegerField(choices=RATIOS, default=1)
 	heightratio = models.IntegerField(choices=RATIOS, default=1)

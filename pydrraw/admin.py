@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 #from django.forms.models import BaseInlineFormSet
-#from pydrraw.models import Dgraph, GraphItems, Rrdpaths, Rrdfiles, Dash, DashItems, DashLayouts, GraphColorScheme
+#Afrom pydrraw.models import Rrdgraph, GraphItems, Rrdpath, Rrdfiles, Dash, DashItems, DashLayouts, GraphColorScheme
 from pydrraw.models import *
 from string import Template
 
@@ -55,36 +55,45 @@ class GraphItemsForm(forms.ModelForm):
 	    model = GraphItems
 
 
-class GraphItemsChoice(admin.TabularInline):
+class GraphItemsChoice(admin.StackedInline):
 	model = GraphItems
 	extra = 0
+	fieldsets = (
+        	(None, {
+        	    #'classes': ('collapse',),
+        	    'fields': (('itemtype', 'rrdds', 'linetype', 'stack', 'color', 'rra', 'seq', 'option_text',),())
+        	}),
+	)
+
 	class Media:
-		js = ('/static/pydrraw/js/jscolor/jscolor.js', 
-		'/static/pydrraw/js/jquery-1.7.2.min.js',
-		'/static/pydrraw/js/jquery.multiselect.filter.min.js', )
+		js = (
+		'/static/pydrraw/js/jscolor/jscolor.js', 
+		'/static/pydrraw/js/mycolor.js', 
+		#'/static/pydrraw/js/jquery-1.7.2.min.js',
+		#'/static/pydrraw/js/jquery.multiselect.filter.min.js', 
+		)
 	def formfield_for_dbfield(self, db_field, **kwargs):
 	    if "color" in db_field.name:
-		attrs = { 'class': 'color' }
+		attrs = { 'class': 'color', 'onClick':'change_class()' }
 	    	kwargs['widget'] = forms.TextInput(attrs=attrs)
-	    if db_field.name == 'alttext':
-		attrs = { 'class': 'color' }
-	    	kwargs['widget'] = forms.TextArea(attrs=attrs)
+	    #if db_field.name == 'alttext':
+	    #	attrs = { 'class': 'color' }
+	    #	kwargs['widget'] = forms.TextArea(attrs=attrs)
 	    return super(GraphItemsChoice,self).formfield_for_dbfield(db_field,**kwargs)
 
 class ColorWidget(forms.TextInput):
 	class Media:
 		js = ('/static/pydrraw/js/jscolor/jscolor.js', )
 
-class DgraphAdmin(admin.ModelAdmin):
-	inlines = [GraphItemsChoice]
-	#readonly_fields=['preview',]
+class RrdgraphAdmin(admin.ModelAdmin):
+	readonly_fields=['image_tag',]
 	fieldsets = (
         	(None, {
-        	    'fields': ('name', 'vertical_label', 'gcolorscheme',)
+        	    'fields': ('name', 'vertical_label', 'gcolorscheme', 'image_tag')
         	}),
         	('Advanced options', {
         	    'classes': ('collapse',),
-        	    'fields': ('graph_options','upper_limit','lower_limit','rigid_boundaries','logarithmic','only_graph','alt_autoscale','alt_autoscale_max','no_gridfit','x_grid','y_grid','alt_y_grid','units_exponent','zoom','font','font_render_mode','no_legend','force_rules_legend','tabwidth','base','slope_mode','backend','showdate_start','showdate_end','showdate_now','pub_date',)
+        	    'fields': ('graph_options','upper_limit','lower_limit','rigid_boundaries','logarithmic','only_graph','alt_autoscale','alt_autoscale_max','no_gridfit','x_grid','y_grid','alt_y_grid','units_exponent','zoom','font','font_render_mode','no_legend','force_rules_legend','tabwidth','base','slope_mode','backend','showdate_start','showdate_end','showdate_now',)
         	}),
 	)
 	class Media:
@@ -93,7 +102,8 @@ class DgraphAdmin(admin.ModelAdmin):
 	    if db_field.name == 'color':
 		attrs = { 'class': 'color' }
 	    	kwargs['widget'] = forms.TextInput(attrs=attrs)
-	    return super(DgraphAdmin,self).formfield_for_dbfield(db_field,**kwargs)
+	    return super(RrdgraphAdmin,self).formfield_for_dbfield(db_field,**kwargs)
+	inlines = [GraphItemsChoice]
 
 class RrdfilesChoice(admin.TabularInline):
 	model = Rrdfiles
@@ -138,9 +148,9 @@ class DashAdmin(admin.ModelAdmin):
 
 	
 # Register your models here.
-admin.site.register(Dgraph, DgraphAdmin)
-admin.site.register(Rrdpaths, RrdPathsAdmin)
-admin.site.register(DashLayouts)
+admin.site.register(Rrdgraph, RrdgraphAdmin)
+admin.site.register(Rrdpath, RrdPathsAdmin)
+#admin.site.register(DashLayouts)
 admin.site.register(Dash, DashAdmin)
 admin.site.register(GraphColorScheme)
 admin.site.register(GraphItemColorCycle, GraphItemColorCycleAdmin)

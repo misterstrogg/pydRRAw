@@ -20,6 +20,12 @@
     position: absolute;
 }
 
+.gridster:hover {
+	-moz-box-shadow: 0 0 10px #ccc; 
+	-webkit-box-shadow: 0 0 10px #ccc; 
+	box-shadow: 0 0 10px #ccc;
+}
+
 .ready .gs-w:not(.preview-holder) {
     -webkit-transition: opacity .3s, left .3s, top .3s;
     -moz-transition: opacity .3s, left .3s, top .3s;

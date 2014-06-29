@@ -2,7 +2,7 @@ body {
     background-color: #EEEEEE;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
-    font-size: x-small;
+    font-size: small;
     color: #666666;
 }
 
@@ -62,7 +62,7 @@ li {
 .gridster .preview-holder {
     z-index: 1;
     position: absolute;
-    background-color: #fff;
+    background-color: #222;
     border-color: #fff;
     opacity: 0.3;
 }
@@ -90,4 +90,25 @@ li {
     height:50px;
     background-color:#dcdcdc;
     margin-bottom: 20px;
+}
+
+.textinfo {
+    background-color: #222222;
+    color: #EEEEEE
+}
+
+a:link {
+    color: #FF0000;
+}
+
+a:visited {
+    color: #00FF00;
+}
+
+a:hover {
+    color: #FF00FF;
+}
+
+a:active {
+    color: #0000FF;
 }
