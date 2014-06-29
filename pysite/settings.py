@@ -18,12 +18,10 @@ SUBSITE = "/pysite/"
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '2=$0^-))_hb2=f&oz#f7h_3g&%x)51jyomt1dew-%5f##7p4!m'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -31,10 +29,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = (
-#    'admin_tools',
-#    'admin_tools.theming',
-#    'admin_tools.menu',
-#    'admin_tools.dashboard',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -67,14 +61,14 @@ WSGI_APPLICATION = 'pysite.wsgi.application'
 
 DATABASES = {
     'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'ENGINE': 'django.db.backends.mysql',
-	'NAME': 'pydrraw',
-        'USER': 'django',
-	'PASSWORD': 'schtanky',
-	'HOST': 'localhost',
-	'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#        'ENGINE': 'django.db.backends.mysql',
+#	'NAME': 'pydrraw',
+#        'USER': 'django',
+#	'PASSWORD': 'django',
+#	'HOST': 'localhost',
+#	'PORT': '3306',
     }
 }
 
@@ -111,8 +105,13 @@ TEMPLATE_DIRS = (
 #"django.core.context_processors.tz",
 #"django.contrib.messages.context_processors.messages"
 #)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }
-}
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#    }
+#}
+
+try:
+    from local_settings import *
+except ImportError, exp:
+    pass

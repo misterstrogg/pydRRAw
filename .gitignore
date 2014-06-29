@@ -1,0 +1,9 @@
+*.orig
+*.pyc
+*.swp
+*.sqlite3
+env
+*.json
+local_settings.py
+pyrrd
+
