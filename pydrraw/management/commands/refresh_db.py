@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from pydrraw.models import Rrdfiles, Rrdpaths
+from pydrraw.models import Rrdfiles, Rrdpath
 import re
 
 class Command(BaseCommand):
@@ -19,7 +19,7 @@ class Command(BaseCommand):
 	#print args
         for rrdpathname in args:
 #            try:
-	        datasources = Rrdpaths.dumpfileinfo(Rrdpaths.objects.get(name=str(rrdpathname)))
+	        datasources = Rrdpath.dumpfileinfo(Rrdpath.objects.get(name=str(rrdpathname)))
 		for rrdsource,spath,filename,dsource in datasources:
 		    #print spath
 		    #for x in range (0, 100):

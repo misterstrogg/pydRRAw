@@ -128,7 +128,7 @@ def drawgraph(req, graphid):
 		filename = rootdir + '/' + gobject.rrdds.subpath
 		rra = gobject.rra
 		namesuff = str(gobject.seq)
-		legendtext = subpath+" "+rrdds+" "+rra+ " " +str(now)
+		legendtext = subpath+" "+rrdds+" "+rra+ " "
                 gitems.append(DEF(rrdfile=filename, vname='d'+namesuff, dsName=rrdds))
 		gitems.append(CDEF(vname='c'+namesuff, rpn='%s' % 'd'+namesuff))
 		linetype = gobject.linetype.upper()
@@ -145,11 +145,10 @@ def drawgraph(req, graphid):
 	        rrddslist = Rrdfiles.objects.filter(rootdir__name__regex=regtextarr[0]).filter(subpath__regex=regtextarr[1]).filter(ds__regex=regtextarr[2])
 		i = 0
 
-		#color cycle for template item
 		colors = []
-		colorset = GraphItems.COLORS
+		colorset = GraphItemColorCycleColor.objects.filter(name='weeee').order_by('seq')
 		for x in colorset:
-		     	colors.append(x)
+		     	colors.append(str('#' + x.color))
 
 		for rrdds in rrddslist:
 			rootdir = rrdds.rootdir.path
@@ -158,9 +157,9 @@ def drawgraph(req, graphid):
 			filename = rootdir + subpath
 			rra = gobject.rra
 			linetype = gobject.linetype.upper()
-			mycolor = colors[i % len(colors)][0]
+			mycolor = colors[i % len(colors)]
 			namesuff = str(gobject.seq) + '_' + str(i)
-			legendtext = subpath+" "+rrdds+" "+rra+ " " +str(now)
+			legendtext = subpath+" "+rrdds+" ("+rra+ ") "
                 	gitems.append(DEF(rrdfile=filename, vname='d'+namesuff, dsName=rrdds))
 			gitems.append(CDEF(vname='c'+namesuff, rpn='%s' % 'd'+namesuff))
 			if linetype == 'A':
@@ -193,17 +192,17 @@ def drawgraph(req, graphid):
 	cs = req.GET.get('cs', ginfo.gcolorscheme)
 	colsch = GraphColorScheme.objects.get(pk=cs)
    	ca = ColorAttributes()
-   	ca.back = colsch.cback + colsch.tback
-   	ca.canvas = colsch.cback + colsch.tcanvas
-   	ca.shadea = colsch.cback + colsch.tshadea
-   	ca.shadeb = colsch.cback + colsch.tshadeb
-   	ca.mgrid = colsch.cmgrid + colsch.tmgrid
-   	ca.axis = colsch.caxis + colsch.taxis
-   	ca.frame = colsch.cframe + colsch.tframe
-   	ca.font = colsch.cfont + colsch.tfont
-   	ca.arrow = colsch.carrow + colsch.tarrow
+   	ca.back = '#' + colsch.cback + colsch.tback
+   	ca.canvas = '#' + colsch.ccanvas + colsch.tcanvas
+   	ca.shadea = '#' + colsch.cshadea + colsch.tshadea
+   	ca.shadeb = '#' + colsch.cshadeb + colsch.tshadeb
+   	ca.mgrid = '#' + colsch.cmgrid + colsch.tmgrid
+   	ca.axis = '#' + colsch.caxis + colsch.taxis
+   	ca.frame = '#' + colsch.cframe + colsch.tframe
+   	ca.font = '#' + colsch.cfont + colsch.tfont
+   	ca.arrow = '#' + colsch.carrow + colsch.tarrow
 	#make a pyrrd Graph object, destination standard out (-)
-	g = Graph('-', imgformat='png', start=start, end=end, color=ca, vertical_label='"'+ginfo.name+'"')
+	g = Graph('-', imgformat='png', start=start, end=end, color=ca, vertical_label='"'+ginfo.vertical_label+'"')
 	#populate it with our url params, defaulting to Rrdgraph instance (ginfo) options
 	fullsizemode = req.GET.get('fullsizemode')
 	if (fullsizemode in ['0', 'False' , 'false', 'no', 'No']):
@@ -230,7 +229,7 @@ def drawgraph(req, graphid):
 	g.title = '"'+ginfo.name+'"' 
 	g.data.extend(gitems)  #write in our gitems we generated
 	a = g.write()	#gets the binary image finally
-	#minetype = gobject.linetype.value.upper() #just a thing to cause an error and debug
+	#minetype #just a thing to cause an error and debug
     	return HttpResponse(a,mimetype="image/png")
 #  return HttpResponse("failed to retrieve graph objects",mimetype="text/plain")
 def dash2(req, dashid):

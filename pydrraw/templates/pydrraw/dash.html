@@ -84,9 +84,10 @@ $(window).ready(function () {
 			styleurlappend = '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
 			  if (fc == 'True') {
 				//main colors want no leading #
-				styleurlappend+='&bgcolor=' + '{{ csobj.cback }}'.substring(1);
-				styleurlappend+='&fgcolor=' + '{{ csobj.cfont }}'.substring(1);
-				styleurlappend+='&majorGridLineColor=' + '{{ csobj.cmgrid }}';
+				styleurlappend+='&bgcolor=' + '{{ csobj.cback }}' + '{{ csobj.tback }}';
+				styleurlappend+='&fgcolor=' + '{{ csobj.cfont }}' + '{{ csobj.tfont }}';
+				// but others do
+				styleurlappend+='&majorGridLineColor=#' + '{{ csobj.cmgrid }}' + '{{ csobj.tmgrid }}';
 			  }
 			imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;
 			linkurl = rawgraphurl + timeurlappend + '&height=' + $(window).height() + '&width=' + $(window).width();;
@@ -141,9 +142,11 @@ $(function () { //DOM Ready
 			sizeurlappend = '&height=' + newheight + '&width=' + newwidth;
 			styleurlappend = '&hideLegend=1&graphOnly={{ dinfo.graphonly }}';
 			  if (fc == 'True') {
-				styleurlappend+='&bgcolor=' + '{{ csobj.cback }}'.substring(1);
-				styleurlappend+='&fgcolor=' + '{{ csobj.cfont }}'.substring(1);
-				styleurlappend+='&majorGridLineColor=' + '{{ csobj.cmgrid }}';
+				//main colors want no leading #
+				styleurlappend+='&bgcolor=' + '{{ csobj.cback }}' + '{{ csobj.tback }}';
+				styleurlappend+='&fgcolor=' + '{{ csobj.cfont }}' + '{{ csobj.tfont }}';
+				// but others do
+				styleurlappend+='&majorGridLineColor=#' + '{{ csobj.cmgrid }}' + '{{ csobj.tmgrid }}';
 			  }
 		}
 		imageurl = rawgraphurl + sizeurlappend + timeurlappend + styleurlappend;

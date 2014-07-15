@@ -92,7 +92,7 @@ class RrdgraphAdmin(admin.ModelAdmin):
         	    'fields': ('name', 'vertical_label', 'gcolorscheme', 'image_tag')
         	}),
         	('Advanced options', {
-        	    'classes': ('collapse',),
+        	    'classes': ('collapse', 'grp-collapse grp-closed'),
         	    'fields': ('graph_options','upper_limit','lower_limit','rigid_boundaries','logarithmic','only_graph','alt_autoscale','alt_autoscale_max','no_gridfit','x_grid','y_grid','alt_y_grid','units_exponent','zoom','font','font_render_mode','no_legend','force_rules_legend','tabwidth','base','slope_mode','backend','showdate_start','showdate_end','showdate_now',)
         	}),
 	)
@@ -104,6 +104,15 @@ class RrdgraphAdmin(admin.ModelAdmin):
 	    	kwargs['widget'] = forms.TextInput(attrs=attrs)
 	    return super(RrdgraphAdmin,self).formfield_for_dbfield(db_field,**kwargs)
 	inlines = [GraphItemsChoice]
+
+class GraphColorSchemeAdmin(admin.ModelAdmin):
+	class Media:
+		js = ('/static/pydrraw/js/jscolor/jscolor.js', )
+	def formfield_for_dbfield(self, db_field, **kwargs):
+	    if db_field.name.startswith('c'):
+		attrs = { 'class': 'color' }
+	    	kwargs['widget'] = forms.TextInput(attrs=attrs)
+	    return super(GraphColorSchemeAdmin,self).formfield_for_dbfield(db_field,**kwargs)
 
 class RrdfilesChoice(admin.TabularInline):
 	model = Rrdfiles
@@ -152,5 +161,5 @@ admin.site.register(Rrdgraph, RrdgraphAdmin)
 admin.site.register(Rrdpath, RrdPathsAdmin)
 #admin.site.register(DashLayouts)
 admin.site.register(Dash, DashAdmin)
-admin.site.register(GraphColorScheme)
+admin.site.register(GraphColorScheme, GraphColorSchemeAdmin)
 admin.site.register(GraphItemColorCycle, GraphItemColorCycleAdmin)

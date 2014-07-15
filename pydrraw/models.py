@@ -41,28 +41,26 @@ class GraphColorScheme(models.Model):
 	}
 	name = models.CharField(max_length=20, primary_key=True)
 	name.unique
-    	cback = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tback = models.CharField(max_length=2, blank=True)
-    	ccanvas = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tcanvas = models.CharField(max_length=2, blank=True)
-    	cshadea = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tshadea = models.CharField(max_length=2, blank=True)
-    	cshadeb = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tshadeb = models.CharField(max_length=2, blank=True, verbose_name="Shade B Transparency")
-    	cmgrid = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tmgrid = models.CharField(max_length=2, blank=True, )
-    	caxis = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	taxis = models.CharField(max_length=2, blank=True, )
-    	cframe = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tframe = models.CharField(max_length=2, blank=True, )
-    	cfont = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tfont = models.CharField(max_length=2, blank=True, )
-    	carrow = models.CharField(max_length=7, blank=True, choices=COLORS)
-    	tarrow = models.CharField(max_length=2, blank=True, )
+    	cback = models.CharField(max_length=7, blank=True, verbose_name="Background Color", )
+    	tback = models.CharField(max_length=2, blank=True, verbose_name="Background Transparency",)
+    	ccanvas = models.CharField(max_length=7, blank=True, verbose_name="Canvas Color", )
+    	tcanvas = models.CharField(max_length=2, blank=True, verbose_name="Canvas Transparency",)
+    	cshadea = models.CharField(max_length=7, blank=True, verbose_name="Shade A Color", )
+    	tshadea = models.CharField(max_length=2, blank=True, verbose_name="Shade A Transparency",)
+    	cshadeb = models.CharField(max_length=7, blank=True, verbose_name="Shade B Color", )
+    	tshadeb = models.CharField(max_length=2, blank=True, verbose_name="Shade B Transparency",)
+    	cmgrid = models.CharField(max_length=7, blank=True, verbose_name="MGrid Color", )
+    	tmgrid = models.CharField(max_length=2, blank=True, verbose_name="Mgrid Transparency", )
+    	caxis = models.CharField(max_length=7, blank=True, verbose_name="Axis Color", )
+    	taxis = models.CharField(max_length=2, blank=True, verbose_name="Axis Transparency", )
+    	cframe = models.CharField(max_length=7, blank=True, verbose_name="Frame Color", )
+    	tframe = models.CharField(max_length=2, blank=True, verbose_name="Frame Transparency", )
+    	cfont = models.CharField(max_length=7, blank=True, verbose_name="Font Color", )
+    	tfont = models.CharField(max_length=2, blank=True, verbose_name="Font Transparency", )
+    	carrow = models.CharField(max_length=7, blank=True, verbose_name="Arrow Color", )
+    	tarrow = models.CharField(max_length=2, blank=True, verbose_name="Arrow Transparency", )
     	def __unicode__(self): 
 		return self.name
-	
-
 
 class Rrdpath(models.Model):
 	name = models.CharField(max_length=20, primary_key=True)
